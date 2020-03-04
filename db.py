@@ -1,17 +1,19 @@
 import sqlite3
 from pathlib import Path
 
+
 class DB(object):
-    def __init__(self, database_file):
+    def __init__(self, database_file, init_db=True):
         self._database_file = Path(database_file).expanduser()
-        self._database_file.parent.mkdir(parents = True, exist_ok = True)
-    
+        self.init_db = init_db
+
     def __enter__(self):
         self._db_connection = sqlite3.connect(str(self._database_file))
         self._db_cur = self._db_connection.cursor()
-        self._init_db()
+        if self.init_db:
+            self._init_db()
         return self
-    
+
     def __exit__(self, exc_class, exc, traceback):
         self._db_connection.commit()
         self._db_connection.close()
@@ -23,6 +25,7 @@ class DB(object):
         self._db_connection.commit()
 
     def _init_db(self):
+        self._database_file.parent.mkdir(parents=True, exist_ok=True)
         self._db_cur.executescript(r'''
         CREATE TABLE IF NOT EXISTS images 
         (
@@ -62,12 +65,12 @@ class DB(object):
     def image_select_by_dhash(self, dhash):
         return self._execute(r'''
             SELECT * FROM images WHERE dhash = ?
-        ''', (dhash, ))
+        ''', (dhash,))
 
     def image_select_by_file_name(self, file_name):
         return self._execute(r'''
             SELECT * FROM images WHERE file_name = ?
-        ''', (file_name, )).fetchone()
+        ''', (file_name,)).fetchone()
 
     def image_select_all(self):
         return self._execute(r'''
@@ -79,7 +82,7 @@ class DB(object):
             SELECT * FROM images ORDER BY RANDOM() LIMIT ?
         ''', (num,))
 
-    def image_select_duplicate_dhash(self, start = '', limit = 10):
+    def image_select_duplicate_dhash(self, start='', limit=10):
         return self._execute(r'''
             SELECT *
             FROM images
@@ -98,16 +101,16 @@ class DB(object):
     def image_delete(self, file_name):
         self._execute(r'''
             DELETE FROM images WHERE file_name = ?
-        ''', (file_name, ))
+        ''', (file_name,))
         self._commit()
 
     def image_purge(self, condition):
         cursor2 = self._db_connection.cursor()
         for row in self._execute(r'''
                 SELECT * FROM images
-            '''):
+                '''):
             if condition(row):
-                print("Orphan", row['file_name'])
+                print("Missing {}".format(row['file_name']))
                 cursor2.execute(r'''
                     DELETE FROM images WHERE file_name = ?
                 ''', (row['file_name'],))
