@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from exiftool import ExifTool
+from exif import ExifTool
 
 from commands.command import Command
 from db import DB

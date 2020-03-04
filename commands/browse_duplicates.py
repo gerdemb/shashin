@@ -1,9 +1,9 @@
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 from itertools import groupby
 from math import floor, log10
 from pathlib import Path
 
-from exiftool import ExifTool
+from exif import ExifTool
 from flask import request, Flask, render_template, send_file
 from werkzeug.exceptions import abort
 from werkzeug.routing import PathConverter
@@ -41,7 +41,7 @@ class BrowseDuplicatesCommand(object):
         return round(x, -int(floor(log10(abs(x)))))
 
     @staticmethod
-    def get_diff_keys(dicts):
+    def get_diff_tags(dicts):
         # Collect all key values
         key_vals = defaultdict(list)
         for d in dicts:
@@ -56,7 +56,7 @@ class BrowseDuplicatesCommand(object):
         return diff_keys
 
     @staticmethod
-    def order_keys(diff_keys, first_keys, ignore_keys):
+    def order_tags(diff_keys, first_keys, ignore_keys):
         order_keys = list(first_keys)
         order_keys.extend(sorted(filter(
             lambda k: k not in first_keys and k not in ignore_keys,
@@ -69,7 +69,8 @@ class BrowseDuplicatesCommand(object):
 
         @app.route('/')
         def index():
-            def sort_key(r):
+            def sort_key(t):
+                _, r = t
                 Megapixels = r['Composite:Megapixels']
                 FileSize = r['File:FileSize']
                 FileName = r['File:FileName']
@@ -87,31 +88,30 @@ class BrowseDuplicatesCommand(object):
 
             def get_metadata(r):
                 metadata = et.get_metadata(r['file_name'])
-                metadata['Shashin:RelativePath'] = str(Path(r['file_name']).relative_to(self.library_path))
-                return metadata
+                return str(Path(r['file_name']).relative_to(self.library_path)), metadata
 
             with DB(self.database_path) as db:
                 with ExifTool() as et:
                     start = bytes.fromhex(request.args.get('start', ''))
                     # with DB(config.database) as db:
                     duplicates = {}
-                    keys = {}
+                    tags = {}
                     rows = db.image_select_duplicate_dhash(start)
                     for dhash, rows in groupby(rows, lambda x: x['dhash']):
-                        duplicate_group = sorted(
+                        duplicate_group = OrderedDict(sorted(
                             map(get_metadata, rows),
                             key=sort_key
-                        )
+                        ))
                         duplicates[dhash.hex()] = duplicate_group
-                        diff_keys = self.get_diff_keys(duplicate_group)
-                        keys[dhash.hex()] = self.order_keys(
-                            diff_keys, self.FIRST_KEYS, self.IGNORE_KEYS)
+                        diff_tags = self.get_diff_tags(duplicate_group.values())
+                        tags[dhash.hex()] = self.order_tags(
+                            diff_tags, self.FIRST_KEYS, self.IGNORE_KEYS)
                     percentage = None
                     if duplicates:
                         percentage = self.estimate_percentage(tuple(duplicates.keys())[-1])
                     return render_template('index.html',
                                            duplicates=duplicates,
-                                           keys=keys,
+                                           tags=tags,
                                            percentage=percentage)
 
         @app.route('/image/<everything:file_name>', methods=['GET', 'DELETE'])

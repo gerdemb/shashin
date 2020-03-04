@@ -17,15 +17,15 @@
     <div class="container">
         {% for hash, duplicates in duplicates|dictsort %}
         <div class="row row-cols-2 mt-3">
-            {% for img in duplicates %}
+            {% for img_src, img in duplicates.items() %}
             <div class="col">
                 <div class="card h-100">
-                    <a href="/image/{{ img['Shashin:RelativePath'] }}">
-                        <img src="/image/{{ img['Shashin:RelativePath'] }}" class="card-img-top">
+                    <a href="/image/{{ img_src }}">
+                        <img src="/image/{{ img_src }}" class="card-img-top">
                     </a>
                     <div class="card-header">
                         <a class="btn btn-danger delete-btn" role="button"
-                            data-name="{{ img['Shashin:RelativePath'] }}">
+                            data-name="{{ img_src }}">
                             Delete</a>
                     </div>
                     <div class="card-body">
@@ -33,14 +33,14 @@
                         <dl class="row">
                             <table class="table table-sm" style="table-layout: fixed;">
                                 <tbody>
-                                    {% for key in keys[hash] %}
+                                    {% for tag in tags[hash] %}
                                     <tr>
-                                        <td class="small text-truncate">{{ key }}</td>
+                                        <td class="small text-truncate">{{ tag }}</td>
                                         <td class="small text-truncate">
-                                            {% if key == 'File:FileSize' %}
-                                            {{ img[key]|filesizeformat }}
+                                            {% if tag == 'File:FileSize' %}
+                                            {{ img[tag]|filesizeformat }}
                                             {% else %}
-                                            {{ img[key] }}
+                                            {{ img[tag] }}
                                             {% endif %}
                                         </td>
                                     </tr>
@@ -51,7 +51,7 @@
                     </div>
                     <!-- <div class="card-footer">
                         <a class="btn btn-danger delete-btn" role="button"
-                            data-name="{{ img['Shashin:RelativePath'] }}">
+                            data-name="{{ img_src }}">
                             Delete</a>
                     </div> -->
                 </div>
