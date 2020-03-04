@@ -3,15 +3,13 @@ from pathlib import Path
 
 
 class DB(object):
-    def __init__(self, database_file, init_db=True):
+    def __init__(self, database_file):
         self._database_file = Path(database_file).expanduser()
-        self.init_db = init_db
 
     def __enter__(self):
         self._db_connection = sqlite3.connect(str(self._database_file))
         self._db_cur = self._db_connection.cursor()
-        if self.init_db:
-            self._init_db()
+        self._init_db()
         return self
 
     def __exit__(self, exc_class, exc, traceback):
