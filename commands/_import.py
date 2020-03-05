@@ -1,12 +1,13 @@
 from enum import Enum
 from pathlib import Path
 
-from exif import ExifTool
+from exif import Exif
 
 from commands.command import Command
 from db import DB
-from exceptions import UnknownFileType, ExifToolError, UserError
-from utils import get_file_stats, import_image, path_file_walk, cp, mv, is_child
+from exceptions import UserError
+from library import Library
+from utils import get_file_stats, path_file_walk, is_child
 
 
 class ImportCommand(Command):
@@ -19,12 +20,13 @@ class ImportCommand(Command):
                 "Import path {} is inside library {}".format(config.import_path, config.library_root))
 
         self.library_path = Path(config.library)
+        self.hierarchy = config.hierarchy
         self.import_path = Path(config.import_path)
         self.database_file = config.database
 
-        self.import_action = cp
+        self.import_action = Library.cp
         if config.import_action == 'mv':
-            self.import_action = mv
+            self.import_action = Library.mv
         self.duplicate_action = self.DuplicateActions.SKIP
         if config.import_duplicates:
             self.duplicate_action = self.DuplicateActions.IMPORT
@@ -33,7 +35,8 @@ class ImportCommand(Command):
 
     def execute(self):
         with DB(self.database_file) as db:
-            with ExifTool() as et:
+            with Exif() as et:
+                library = Library(self.library_path, self.hierarchy)
                 for file in path_file_walk(self.import_path):
                     # TODO no need to calculate dhash at this point if md5 matches
                     stats = get_file_stats(file)
@@ -50,8 +53,9 @@ class ImportCommand(Command):
                             pass
                     # 2. If necessary, move file to new location
                     try:
-                        imported_file = import_image(et, file, self.library_path, self.import_action)
-                    except (UnknownFileType, ExifToolError) as e:
+                        metadata = et.get_metadata(str(file))
+                        imported_file = library.import_image(metadata, self.import_action)
+                    except Exception as e:
                         print("Error {} {}".format(file, e))
                         continue
                     db.image_insert(file_name=str(imported_file), **stats)

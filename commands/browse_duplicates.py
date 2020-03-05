@@ -3,13 +3,13 @@ from itertools import groupby
 from math import floor, log10
 from pathlib import Path
 
-from exif import ExifTool
+from exif import Exif
 from flask import request, Flask, render_template, send_file
 from werkzeug.exceptions import abort
 from werkzeug.routing import PathConverter
 
 from db import DB
-from utils import delete_image, is_child
+from utils import delete_image
 
 
 class BrowseDuplicatesCommand(object):
@@ -20,20 +20,19 @@ class BrowseDuplicatesCommand(object):
         # TODO make these configurable
         self.FIRST_KEYS = [
             'SourceFile',
-            'File:FileName',
-            'Composite:ImageSize',
-            'File:FileSize',
-            'File:FileModifyDate',
-            'EXIF:DateTimeOriginal',
+            'FileName',
+            'ImageSize',
+            'FileSize',
+            'FileModifyDate',
+            'DateTimeOriginal',
         ]
         self.IGNORE_KEYS = [
-            'File:Directory',
-            'Shashin:RelativePath',
+            'Directory',
         ]
 
     @staticmethod
     def estimate_percentage(hash):
-        # Maximum hash value as an long
+        # Maximum hash value as a long
         return (100 * int.from_bytes(bytes.fromhex(hash), "big")) / 340282366920938463463374607431768211455
 
     @staticmethod
@@ -71,11 +70,11 @@ class BrowseDuplicatesCommand(object):
         def index():
             def sort_key(t):
                 _, r = t
-                Megapixels = r['Composite:Megapixels']
-                FileSize = r['File:FileSize']
-                FileName = r['File:FileName']
+                Megapixels = r['Megapixels']
+                FileSize = r['FileSize']
+                FileName = r['FileName']
                 DateTimeOriginal = r.get('DateTimeOriginal', None)
-                FileModifyDate = r['File:FileModifyDate']
+                FileModifyDate = r['FileModifyDate']
 
                 return (
                     -Megapixels,
@@ -91,9 +90,8 @@ class BrowseDuplicatesCommand(object):
                 return str(Path(r['file_name']).relative_to(self.library_path)), metadata
 
             with DB(self.database_path) as db:
-                with ExifTool() as et:
+                with Exif() as et:
                     start = bytes.fromhex(request.args.get('start', ''))
-                    # with DB(config.database) as db:
                     duplicates = {}
                     tags = {}
                     rows = db.image_select_duplicate_dhash(start)
@@ -126,7 +124,6 @@ class BrowseDuplicatesCommand(object):
                 elif request.method == 'DELETE':
                     delete_image(db, file)
                     return 'True'
-
 
         app.run(host='0.0.0.0', port=8000)
 

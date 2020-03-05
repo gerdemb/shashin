@@ -5,15 +5,22 @@ import sys
 import configargparse
 
 import exceptions
-from commands import _import, rescan_library, random_snapshots, browse_duplicates
+from commands import _import, organize_library, random_snapshots, browse_duplicates
 
 DEFAULT_CONFIG_FILE = '~/.config/shashin/shashin.conf'
 DEFAULT_DATABASE_FILE = '~/.config/shashin/shashin.db'
+DEFAULT_HIERARCHY = r'''
+{% if DateTimeOriginal %}
+    {{ DateTimeOriginal.strftime('%Y/%m/%d') }}
+{% else %}
+    {{ FileModifyDate.strftime('%Y/%m/%d') }}
+{% endif %}
+'''
 
 
 def get_parser():
     parser = configargparse.ArgumentParser(add_help=False, default_config_files=[DEFAULT_CONFIG_FILE],
-                                           description="Organize images and videos in a library")
+                                           config_file_parser_class=configargparse.YAMLConfigFileParser)
 
     # https://stackoverflow.com/questions/24180527/argparse-required-arguments-listed-under-optional-arguments
     required = parser.add_argument_group('required arguments')
@@ -26,7 +33,9 @@ def get_parser():
         help='show this help message and exit'
     )
     required.add_argument('-l', '--library', required=True, help='library path')
-    optional.add_argument('-c', '--config', is_config_file=True,default=DEFAULT_CONFIG_FILE,
+    required.add_argument('-p', '--hierarchy', required=True, help='directory hierarchy for library',
+                          default=DEFAULT_HIERARCHY)
+    optional.add_argument('-c', '--config', is_config_file=True, default=DEFAULT_CONFIG_FILE,
                           help='Config file path (default: %(default)s)')
     optional.add_argument('-d', '--database', default=DEFAULT_DATABASE_FILE,
                           help='database filename (default: %(default)s)')
@@ -43,9 +52,9 @@ def get_parser():
     group.add_argument("--delete-duplicates", action="store_true", help="delete duplicates from import directory")
     import_parser.set_defaults(cls=_import.ImportCommand)
 
-    rescan_library_parser = subparsers.add_parser("rescan-library",
+    organize_library_parser = subparsers.add_parser("organize-library",
                                                   help="Rescan the library for changes and update the database")
-    rescan_library_parser.set_defaults(cls=rescan_library.RescanLibraryCommand)
+    organize_library_parser.set_defaults(cls=organize_library.OrganizeLibraryCommand)
 
     random_snapshots_parser = subparsers.add_parser("random-snapshots",
                                                     help="Export a random selection of images as snapshots")

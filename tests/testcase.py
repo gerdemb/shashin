@@ -6,6 +6,8 @@ import warnings
 from argparse import Namespace
 from pathlib import Path
 
+from shashin import DEFAULT_HIERARCHY
+
 
 class ShashinTestCase(unittest.TestCase):
     def setUp(self):
@@ -28,11 +30,11 @@ class ShashinTestCase(unittest.TestCase):
             import_action='cp',
             import_duplicates=False,
             delete_duplicates=False,
+            hierarchy=DEFAULT_HIERARCHY,
         )
 
-    def _cp_resource(self, resource):
-        src = str(Path(__file__).parent / "resources" / resource.name)
-        shutil.copy2(src, self.temp_import.name)
+    def _cp_to_import(self, resource):
+        shutil.copy2(str(resource.src_path), str(self.import_path))
 
     def _select_db_row(self, file_name):
         return self.db_cursor.execute(r'''
@@ -52,9 +54,8 @@ class ShashinTestCase(unittest.TestCase):
         db_row = dict(self._get_resource_row(resource))
         resource_row = resource.get_db_row(self.library_path)
 
-        # Sometimes mtime float values don't exactly match. Round to int.
-        db_row['mtime'] = int(db_row['mtime'])
-        resource_row['mtime'] = int(resource_row['mtime'])
+        # file modified time comparison is error-prone
+        del db_row['mtime']
         self.assertEqual(db_row, resource_row)
 
     def assertResourceNotInDatabase(self, resource):

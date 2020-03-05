@@ -1,9 +1,9 @@
-from pathlib import Path
+import shutil
 
 from commands._import import ImportCommand
-from utils import cp, mv
-from .resources import IMG_0, IMG_0_COPY
-from .testcase import ShashinTestCase
+from library import Library
+from tests.resources.resources import IMG_0, IMG_0_COPY
+from tests.testcase import ShashinTestCase
 
 
 class TestImportCommand(ShashinTestCase):
@@ -11,11 +11,11 @@ class TestImportCommand(ShashinTestCase):
     def test_init(self):
         # Test import_action
         command = ImportCommand(self.config)
-        self.assertEqual(command.import_action, cp)
+        self.assertEqual(command.import_action, Library.cp)
 
         self.config.import_action = 'mv'
         command = ImportCommand(self.config)
-        self.assertEqual(command.import_action, mv)
+        self.assertEqual(command.import_action, Library.mv)
 
         # Test duplicate action
         command = ImportCommand(self.config)
@@ -32,7 +32,7 @@ class TestImportCommand(ShashinTestCase):
 
     def test_execute_cp(self):
         # Arrange
-        self._cp_resource(IMG_0)
+        self._cp_to_import(IMG_0)
 
         # Act
         ImportCommand(self.config).execute()
@@ -44,7 +44,7 @@ class TestImportCommand(ShashinTestCase):
 
     def test_execute_mv(self):
         # Arrange
-        self._cp_resource(IMG_0)
+        self._cp_to_import(IMG_0)
         self.config.import_action = 'mv'
 
         # Act
@@ -57,10 +57,10 @@ class TestImportCommand(ShashinTestCase):
 
     def test_execute_duplicate_skip(self):
         # Arrange
-        self._cp_resource(IMG_0)
+        self._cp_to_import(IMG_0)
         self.config.import_action = 'mv'
         ImportCommand(self.config).execute()
-        self._cp_resource(IMG_0_COPY)
+        self._cp_to_import(IMG_0_COPY)
 
         # Act
         ImportCommand(self.config).execute()
@@ -75,11 +75,11 @@ class TestImportCommand(ShashinTestCase):
 
     def test_execute_duplicate_import(self):
         # Arrange
-        self._cp_resource(IMG_0)
+        self._cp_to_import(IMG_0)
         self.config.import_action = 'mv'
         self.config.import_duplicates = True
         ImportCommand(self.config).execute()
-        self._cp_resource(IMG_0_COPY)
+        self._cp_to_import(IMG_0_COPY)
 
         # Act
         ImportCommand(self.config).execute()
@@ -94,11 +94,11 @@ class TestImportCommand(ShashinTestCase):
 
     def test_execute_duplicate_rm(self):
         # Arrange
-        self._cp_resource(IMG_0)
+        self._cp_to_import(IMG_0)
         self.config.import_action = 'mv'
         self.config.delete_duplicates = True
         ImportCommand(self.config).execute()
-        self._cp_resource(IMG_0_COPY)
+        self._cp_to_import(IMG_0_COPY)
 
         # Act
         ImportCommand(self.config).execute()

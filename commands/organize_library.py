@@ -1,18 +1,19 @@
 from pathlib import Path
 
-from exif import ExifTool
+from exif import Exif
 
 from commands.command import Command
 from db import DB
-from exceptions import UnknownFileType, ExifToolError
-from utils import get_file_stats, import_image, get_mtime_and_size, path_file_walk, mv, is_empty_dir, path_dir_walk
+from library import Library
+from utils import get_file_stats, get_mtime_and_size, path_file_walk, is_empty_dir, path_dir_walk
 
 
-class RescanLibraryCommand(Command):
+class OrganizeLibraryCommand(Command):
 
     def __init__(self, config):
         super().__init__(config)
         self.library_path = Path(config.library)
+        self.hierarchy = config.hierarchy
         self.database = config.database
 
     def execute(self):
@@ -28,7 +29,8 @@ class RescanLibraryCommand(Command):
 
     def scan_files(self):
         with DB(self.database) as db:
-            with ExifTool() as et:
+            with Exif() as et:
+                library = Library(self.library_path, self.hierarchy)
                 for file in path_file_walk(self.library_path):
                     mtime, size = get_mtime_and_size(file)
                     row = db.image_select_by_file_name(str(file))
@@ -41,8 +43,9 @@ class RescanLibraryCommand(Command):
                         db.image_delete(str(file))
                     # 2. If necessary, move file to new location
                     try:
-                        imported_file = import_image(et, file, self.library_path, action=mv)
-                    except (UnknownFileType, ExifToolError) as e:
+                        metadata = et.get_metadata(str(file))
+                        imported_file = library.import_image(metadata, action=Library.mv)
+                    except Exception as e:
                         print("Error", file, e)
                         continue
                     stats = get_file_stats(imported_file)
