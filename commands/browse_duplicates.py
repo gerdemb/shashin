@@ -1,14 +1,16 @@
+import tempfile
 from collections import defaultdict, OrderedDict
 from itertools import groupby
 from math import floor, log10
 from pathlib import Path
 
-from exif import Exif
-from flask import request, Flask, render_template, send_file
+from flask import request, Flask, render_template, send_file, make_response
+from wand.image import Image
 from werkzeug.exceptions import abort
 from werkzeug.routing import PathConverter
 
 from db import DB
+from exif import Exif
 from utils import delete_image
 
 
@@ -120,7 +122,14 @@ class BrowseDuplicatesCommand(object):
                 if not db.image_select_by_file_name(str(file)):
                     abort(404)
                 if request.method == 'GET':
-                    return send_file(str(file))
+                    if file.suffix == '.HEIC':
+                        with Image(filename=str(file)) as img:
+                            with tempfile.NamedTemporaryFile(prefix=file.name, suffix='.JPG', delete=True) as fp:
+                                img.format = 'jpeg'
+                                img.save(filename=fp.name)
+                                return send_file(fp.name)
+                    else:
+                        return send_file(str(file))
                 elif request.method == 'DELETE':
                     delete_image(db, file)
                     return 'True'
