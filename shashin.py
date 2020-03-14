@@ -33,7 +33,7 @@ def get_parser():
         help='show this help message and exit'
     )
     required.add_argument('-l', '--library', required=True, help='library path')
-    required.add_argument('-p', '--hierarchy', required=True, help='directory hierarchy for library',
+    required.add_argument('-p', '--hierarchy', help='directory hierarchy for library',
                           default=DEFAULT_HIERARCHY)
     optional.add_argument('-c', '--config', is_config_file=True, default=DEFAULT_CONFIG_FILE,
                           help='Config file path (default: %(default)s)')
