@@ -2,6 +2,8 @@ from datetime import datetime
 
 from exiftool import ExifTool
 
+class ExifError(Exception):
+    pass
 
 class Exif(ExifTool):
     DATE_TIME_TAGS = ('DateTimeOriginal', 'FileModifyDate')
@@ -12,8 +14,11 @@ class Exif(ExifTool):
         for d in json:
             for tag in cls.DATE_TIME_TAGS:
                 if tag in d:
-                    # TODO ignoring the +00:00 timezone information. Is that OK?
-                    d[tag] = datetime.strptime(d[tag][:19], cls.DATE_TIME_FMT)
+                    try:
+                        d[tag] = datetime.strptime(d[tag][:19], cls.DATE_TIME_FMT)
+                    except ValueError:
+                        # Leave unchanged strings that cannot be converted to datetime
+                        pass
 
     @staticmethod
     def _remove_groups(json):
@@ -24,5 +29,7 @@ class Exif(ExifTool):
     def execute_json(self, *params):
         json = super().execute_json(*params)
         self._remove_groups(json)
+        if 'Error' in json:
+            raise ExifError(json['Error'])
         self._annotate_date_time_tags(json)
         return json

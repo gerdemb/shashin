@@ -10,7 +10,7 @@ from commands import _import, organize_library, random_snapshots, browse_duplica
 DEFAULT_CONFIG_FILE = '~/.config/shashin/shashin.conf'
 DEFAULT_DATABASE_FILE = '~/.config/shashin/shashin.db'
 DEFAULT_HIERARCHY = r'''
-{% if DateTimeOriginal %}
+{% if DateTimeOriginal and not (DateTimeOriginal is string) %}
     {{ DateTimeOriginal.strftime('%Y/%m/%d') }}
 {% else %}
     {{ FileModifyDate.strftime('%Y/%m/%d') }}
@@ -33,7 +33,7 @@ def get_parser():
         help='show this help message and exit'
     )
     required.add_argument('-l', '--library', required=True, help='library path')
-    required.add_argument('-p', '--hierarchy', help='directory hierarchy for library',
+    optional.add_argument('-p', '--hierarchy', help='directory hierarchy for library',
                           default=DEFAULT_HIERARCHY)
     optional.add_argument('-c', '--config', is_config_file=True, default=DEFAULT_CONFIG_FILE,
                           help='Config file path (default: %(default)s)')

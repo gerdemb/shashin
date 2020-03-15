@@ -4,7 +4,7 @@ from itertools import groupby
 from math import floor, log10
 from pathlib import Path
 
-from flask import request, Flask, render_template, send_file, make_response
+from flask import request, Flask, render_template, send_file
 from wand.image import Image
 from werkzeug.exceptions import abort
 from werkzeug.routing import PathConverter
@@ -74,16 +74,17 @@ class BrowseDuplicatesCommand(object):
                 _, r = t
                 Megapixels = r['Megapixels']
                 FileSize = r['FileSize']
-                FileName = r['FileName']
+                FileStem = Path(r['FileName']).stem
+                FileSuffix = Path(r['FileName']).suffix
                 DateTimeOriginal = r.get('DateTimeOriginal', None)
                 FileModifyDate = r['FileModifyDate']
 
                 return (
                     -Megapixels,
-                    -self.round_to_1(FileSize),
+                    len(FileStem),
+                    FileSuffix,
                     DateTimeOriginal,
                     FileModifyDate,
-                    len(FileName),
                     -FileSize
                 )
 
