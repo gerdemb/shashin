@@ -17,7 +17,7 @@ class ImportCommand(Command):
         super().__init__(config)
         if is_child(Path(config.library), Path(config.import_path)):
             raise UserError(
-                "Import path {} is inside library {}".format(config.import_path, config.library_root))
+                "Import path {} is inside library {}".format(config.import_path, config.library))
 
         self.library_path = Path(config.library)
         self.hierarchy = config.hierarchy

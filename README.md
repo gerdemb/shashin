@@ -58,12 +58,28 @@ Open http://0.0.0.0:8000/
     
     optional arguments:
       -h, --help            show this help message and exit
+      -p HIERARCHY, --hierarchy HIERARCHY
+                            directory hierarchy for library
       -c CONFIG, --config CONFIG
                             Config file path (default:
                             ~/.config/shashin/shashin.conf)
       -d DATABASE, --database DATABASE
                             database filename (default:
                             ~/.config/shashin/shashin.db)
+                            
+#### HIERARCHY
+`HIERARCHY` is a jinja2 template that describes the path hierarchy for the library. Default value:
+
+        {% if DateTimeOriginal and not (DateTimeOriginal is string) %}
+            {{ DateTimeOriginal.strftime('%Y/%m/%d') }}
+        {% else %}
+            {{ FileModifyDate.strftime('%Y/%m/%d') }}
+        {% endif %}
+
+This will store the files in a `YYYY/MM/DD` hierarchy (example: `2020/03/14`) using the `DateTimeOriginal` tag
+if available otherwise using `FileModifyDate`. (The `is string` check is to handle
+the case of invalid DateTimeOriginal values like `0000:00:00 00:00:00`)
+
 ### `import`
     usage: shashin.py import [-h] [-m] [--import-duplicates | --delete-duplicates]
                              import_path
@@ -82,8 +98,6 @@ On an import, the md5 hash and dhash of each file is calculated and stored in an
 used to detect identical files and similar images.
 
 ## TODO
-- Allow custom path hierarchies for the library other than YYYY/MM/DD
 - Allow files to be renamed on import
-- Allow importing existing images in-place without moving to new hierarchy
-- Add method to ignore false positive duplicates
+- Add method to ignore false positive duplicates in browse-duplicates
 - Allow detection of similar videos (probably hard)

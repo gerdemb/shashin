@@ -29,7 +29,11 @@ class Exif(ExifTool):
     def execute_json(self, *params):
         json = super().execute_json(*params)
         self._remove_groups(json)
-        if 'Error' in json:
-            raise ExifError(json['Error'])
         self._annotate_date_time_tags(json)
         return json
+
+    def get_metadata(self, filename):
+        metadata = super().get_metadata(filename)
+        if 'Error' in metadata:
+            raise ExifError(metadata['Error'])
+        return metadata
