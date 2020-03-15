@@ -20,7 +20,7 @@ Shashin is a command-line based photo library management system inspired by [bee
 
 Edit `shashin.conf` to define location of the library
     
-    library = /path/to/store/images
+    library: /path/to/store/images
 
 Import Files
 
@@ -97,6 +97,21 @@ the case of invalid DateTimeOriginal values like `0000:00:00 00:00:00`)
 On an import, the md5 hash and dhash of each file is calculated and stored in an sqlite3 database. This database is
 used to detect identical files and similar images.
 
+## FAQ
+### How can import files in-place without moving them into a library?
+
+1. Set the library to the existing path with your images in `shashin.conf` and set `hierarchy` to `.`
+to prevent the images from being moved.
+
+    library: /path/to/store/images
+    hierarchy: .
+    
+Then run this command:
+    
+    shashin.py organize-library
+    
+The files defined in the library path will be scanned without being moved.
+    
 ## TODO
 - Allow files to be renamed on import
 - Add method to ignore false positive duplicates in browse-duplicates
