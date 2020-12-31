@@ -5,7 +5,7 @@ import sys
 import configargparse
 
 import exceptions
-from commands import _import, organize_library, random_snapshots, browse_duplicates
+from commands import _import, organize_library, random_snapshots, browse_duplicates, label_images
 
 DEFAULT_CONFIG_FILE = '~/.config/shashin/shashin.conf'
 DEFAULT_DATABASE_FILE = '~/.config/shashin/shashin.db'
@@ -65,11 +65,11 @@ def get_parser():
                                                      help="Start a server to allow browsing of duplicate images")
     browse_duplicates_parser.set_defaults(cls=browse_duplicates.BrowseDuplicatesCommand)
 
-    label_images = subparsers.add_parser(
+    label_images_parser = subparsers.add_parser(
         "label-images",
         help="Use Google Vision AI to automatically label images"
     )
-    random_snapshots_parser.set_defaults(cls=label_images.LabelImagesCommand)
+    label_images_parser.set_defaults(cls=label_images.LabelImagesCommand)
 
     return parser
 
