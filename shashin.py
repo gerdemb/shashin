@@ -10,10 +10,10 @@ from commands import _import, organize_library, random_snapshots, browse_duplica
 DEFAULT_CONFIG_FILE = '~/.config/shashin/shashin.conf'
 DEFAULT_DATABASE_FILE = '~/.config/shashin/shashin.db'
 DEFAULT_HIERARCHY = r'''
-{% if DateTimeOriginal and not (DateTimeOriginal is string) %}
-    {{ DateTimeOriginal.strftime('%Y/%m/%d') }}
+{% if DateTimeOriginal and DateTimeOriginal|datetime %}
+    {{ DateTimeOriginal|datetime('%Y/%m/%d') }}
 {% else %}
-    {{ FileModifyDate.strftime('%Y/%m/%d') }}
+    {{ FileModifyDate|datetime('%Y/%m/%d') }}
 {% endif %}
 '''
 

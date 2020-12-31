@@ -2,16 +2,28 @@ import shutil
 import tempfile
 from pathlib import Path
 
-from jinja2 import Template
-
+from jinja2 import Template, Environment
+import datetime
 from utils import is_child
 
 
 class Library(object):
+    DATE_TIME_FMT = '%Y:%m:%d %H:%M:%S'
 
     def __init__(self, library_path, hierarchy):
         self.library_path = library_path
-        self.template = Template(hierarchy)
+        self.template = self._get_template(hierarchy)
+
+    def _get_template(self, hierarchy):
+        environment = Environment()
+        def to_datetime(value, format='%Y/%m/%d'):
+            try:
+                return datetime.strptime(value[:19], self.DATE_TIME_FMT).strftime(format)
+            except ValueError:
+                # Unable to convert to datetime
+                return None
+        environment.filters['datetime'] = to_datetime
+        return environment.from_string(hierarchy)
 
     def _get_path_heirarchy(self, metadata):
         return Path(self.template.render(metadata).strip())
