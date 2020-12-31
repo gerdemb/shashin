@@ -129,3 +129,4 @@ dmypy.json
 
 creds/
 .envrc
+.vscode/
