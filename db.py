@@ -31,7 +31,8 @@ class DB(object):
             mtime FLOAT NOT NULL,
             size INT NOT NULL,
             md5 BLOB NOT NULL,
-            dhash BLOB
+            dhash BLOB,
+            metadata TEXT NOT NULL
         );
 
         CREATE INDEX IF NOT EXISTS idx_md5 ON images 
@@ -50,8 +51,8 @@ class DB(object):
 
     def image_insert(self, **kwargs):
         self._execute(r'''
-            INSERT INTO images (file_name, mtime, size, md5, dhash) 
-            VALUES (:file_name, :mtime, :size, :md5, :dhash)
+            INSERT INTO images (file_name, mtime, size, md5, dhash, metadata) 
+            VALUES (:file_name, :mtime, :size, :md5, :dhash, :metadata)
         ''', kwargs)
         self._commit()
 

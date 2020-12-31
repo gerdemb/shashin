@@ -49,7 +49,7 @@ class OrganizeLibraryCommand(Command):
                         print("Error", file, e)
                         continue
                     stats = get_file_stats(imported_file)
-                    db.image_insert(file_name=str(imported_file), **stats)
+                    db.image_insert(file_name=str(imported_file), metadata=metadata, **stats)
                     if row:
                         if file == imported_file:
                             print("Updated", file)

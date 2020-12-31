@@ -58,5 +58,5 @@ class ImportCommand(Command):
                     except Exception as e:
                         print("Error {} {}".format(file, e))
                         continue
-                    db.image_insert(file_name=str(imported_file), **stats)
+                    db.image_insert(file_name=str(imported_file), metadata=metadata, **stats)
                     print("Imported {} -> {}".format(file, imported_file.parent))
