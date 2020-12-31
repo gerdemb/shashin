@@ -1,6 +1,6 @@
 import sqlite3
 from pathlib import Path
-
+import json
 
 class DB(object):
     def __init__(self, database_file):
@@ -50,6 +50,7 @@ class DB(object):
         self._db_cur.row_factory = sqlite3.Row
 
     def image_insert(self, **kwargs):
+        kwargs['metadata'] = json.dumps(kwargs['metadata'])
         self._execute(r'''
             INSERT INTO images (file_name, mtime, size, md5, dhash, metadata) 
             VALUES (:file_name, :mtime, :size, :md5, :dhash, :metadata)
