@@ -103,8 +103,9 @@ used to detect identical files and similar images.
 1. Set the library to the existing path with your images in `shashin.conf` and set `hierarchy` to `.`
 to prevent the images from being moved.
 
-    library: /path/to/store/images
-    hierarchy: .
+
+     library: /path/to/images
+     hierarchy: .
     
 Then run this command:
     
