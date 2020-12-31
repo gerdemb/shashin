@@ -65,6 +65,12 @@ def get_parser():
                                                      help="Start a server to allow browsing of duplicate images")
     browse_duplicates_parser.set_defaults(cls=browse_duplicates.BrowseDuplicatesCommand)
 
+    label_images = subparsers.add_parser(
+        "label-images",
+        help="Use Google Vision AI to automatically label images"
+    )
+    random_snapshots_parser.set_defaults(cls=label_images.LabelImagesCommand)
+
     return parser
 
 

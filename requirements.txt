@@ -5,3 +5,4 @@ PyExifTool==0.1.1
 Send2Trash==1.5.0
 Wand==0.5.8
 PyYAML==5.3
+google-cloud-vision==1.0.0
