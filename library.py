@@ -2,10 +2,10 @@ import shutil
 import tempfile
 from pathlib import Path
 
-from jinja2 import Template, Environment
+from jinja2 import Environment
 import datetime
 from utils import is_child
-
+from datetime import datetime
 
 class Library(object):
     DATE_TIME_FMT = '%Y:%m:%d %H:%M:%S'
