@@ -19,11 +19,8 @@ class FixDatesCommand(object):
                 for row in db.image_select_date_time_original_is_null():
                     metadata = et.get_metadata(row['file_name'])
                     date_time_original = metadata['FileModifyDate'][:19]
-                    cmd = '-DateTimeOriginal="{}"'.format(date_time_original)
-                    # et.execute_json(row['file_name'], '-DateTimeOriginal=""')
-                    print(
-                        "FileName", row['file_name'],
-                        "FileModifyDate", metadata['FileModifyDate'][:19],
-                        "date_time_original", date_time_original,
-                        "cmd", cmd,
-                    )
+                    params = [
+                        row['file_name'],
+                        '-DateTimeOriginal="{}"'.format(date_time_original)
+                    ]
+                    et.execute_json(*params)
