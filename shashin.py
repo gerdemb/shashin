@@ -66,7 +66,7 @@ def get_parser():
     browse_duplicates_parser.set_defaults(cls=browse_duplicates.BrowseDuplicatesCommand)
 
     fix_dates_parser = subparsers.add_parser("fix-dates")
-    fix_dates_parser.set_defaults(cls=fix_dates.FixDatesCommands)
+    fix_dates_parser.set_defaults(cls=fix_dates.FixDatesCommand)
 
     return parser
 
