@@ -98,6 +98,11 @@ class DB(object):
             ORDER BY dhash;
         ''', (start, limit))
 
+    def image_select_date_time_original_is_null(self):
+        return self._execute(r'''
+            SELECT * FROM images WHERE json_extract(metadata, '$.DateTimeOriginal') IS NULL
+        ''')
+
     def image_delete(self, file_name):
         self._execute(r'''
             DELETE FROM images WHERE file_name = ?

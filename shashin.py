@@ -5,7 +5,7 @@ import sys
 import configargparse
 
 import exceptions
-from commands import _import, organize_library, random_snapshots, browse_duplicates
+from commands import _import, organize_library, random_snapshots, browse_duplicates, fix_dates
 
 DEFAULT_CONFIG_FILE = '~/.config/shashin/shashin.conf'
 DEFAULT_DATABASE_FILE = '~/.config/shashin/shashin.db'
@@ -64,6 +64,9 @@ def get_parser():
     browse_duplicates_parser = subparsers.add_parser("browse-duplicates",
                                                      help="Start a server to allow browsing of duplicate images")
     browse_duplicates_parser.set_defaults(cls=browse_duplicates.BrowseDuplicatesCommand)
+
+    fix_dates_parser = subparsers.add_parser("fix-dates")
+    fix_dates_parser.set_defaults(cls=fix_dates.FixDatesCommands)
 
     return parser
 
