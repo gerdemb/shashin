@@ -24,5 +24,5 @@ class FixDatesCommand(object):
                         file_name,
                         '-DateTimeOriginal="{}"'.format(date_time_original)
                     ]
-                    print(file_name, date_time_original)
-                    et.execute_json(*params)
+                    result = et.execute_raw(*params)
+                    print(file_name, date_time_original, result)
