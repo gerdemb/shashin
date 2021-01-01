@@ -21,5 +21,5 @@ class FixDatesCommand(object):
                     print(
                         "FileName", row['file_name'],
                         "FileModifyDate", metadata['FileModifyDate'],
-                        "DateTimeOriginal", metadata['DateTimeOriginal'],
+                        "DateTimeOriginal", metadata.get('DateTimeOriginal'),
                     )
