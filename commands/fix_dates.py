@@ -19,10 +19,12 @@ class FixDatesCommand(object):
                 for row in db.image_select_date_time_original_is_null():
                     file_name = row['file_name']
                     metadata = et.get_metadata(file_name)
-                    date_time_original = metadata['FileModifyDate'][:19]
-                    params = [
-                        file_name,
-                        '-DateTimeOriginal="{}"'.format(date_time_original)
-                    ]
-                    result = et.execute_raw(*params)
-                    print(file_name, date_time_original, result)
+                    # Sanity Check that actual metadata matches data in DB
+                    if "DateTimeOriginal" not in metadata:
+                        date_time_original = metadata['FileModifyDate'][:19]
+                        params = [
+                            file_name,
+                            '-DateTimeOriginal="{}"'.format(date_time_original)
+                        ]
+                        result = et.execute_raw(*params)
+                        print(file_name, date_time_original, result)
