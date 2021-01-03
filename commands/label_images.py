@@ -60,3 +60,4 @@ class LabelImagesCommand(object):
                             file_name,
                             *params
                         )
+                        print(file_name, labels)
