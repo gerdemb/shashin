@@ -8,3 +8,4 @@ PyYAML==5.3
 # Errors installing dependant grpcio module on Synology NAS
 # google-cloud-vision==1.0.0
 google-auth==1.23.0
+environs==9.3.0
