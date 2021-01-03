@@ -56,8 +56,8 @@ class LabelImagesCommand(object):
                             f'-Keywords={l}'
                             for l in labels
                         ]
-                        et.execute_raw(
+                        result = et.execute_raw(
                             file_name,
                             *params
                         )
-                        print(file_name, labels)
+                        print(file_name, labels, result.strip())
