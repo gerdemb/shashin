@@ -84,7 +84,12 @@ class DB(object):
 
     def image_select_random_no_keywords(self, num):
         return self._execute(r'''
-            SELECT * FROM images WHERE json_extract(metadata, '$.Keywords') IS NULL ORDER BY RANDOM() LIMIT ?
+            SELECT * 
+            FROM images 
+            WHERE 
+                json_extract(metadata, '$.Keywords') IS NULL AND
+                json_extract(metadata, '$.DateTimeOriginal') IS NOT NULL
+            ORDER BY RANDOM() LIMIT ?
         ''', (num,))
 
     def image_select_duplicate_dhash(self, start='', limit=10):
