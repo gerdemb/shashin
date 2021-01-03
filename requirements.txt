@@ -9,3 +9,4 @@ PyYAML==5.3
 # google-cloud-vision==1.0.0
 google-auth==1.23.0
 environs==9.3.0
+requests==2.25.1
