@@ -22,7 +22,7 @@ class LabelImagesCommand(object):
 
         with DB(self.database) as db:
             with Exif() as et:
-                for row in db.image_select_random_no_keywords(1):
+                for row in db.image_select_random_no_keywords(10):
                     file_name = row['file_name']
                     with open(file_name, 'rb') as image_file:
                         encoded_image = base64.b64encode(image_file.read()).decode()
