@@ -19,7 +19,7 @@ class FixDatesCommand(object):
                     if "DateTimeOriginal" not in metadata:
                         file_modify_date = metadata['FileModifyDate']
                         params = [
-                            f'-DateTimeOriginal={file_modify_date}'
+                            f'-DateTimeOriginal={file_modify_date[:19]}'
                         ]
                         result = et.execute_raw(
                             file_name,
