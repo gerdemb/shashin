@@ -48,12 +48,15 @@ class LabelImagesCommand(object):
                             data = data
                         )
                         content = json.loads(response.content)
-                        keywords = [
-                            '-Keywords=' + l['description']
+                        labels = [
+                            l['description']
                             for l in content['responses'][0]['labelAnnotations']
                         ]
-                        print(file_name, keywords)
+                        params = [
+                            f'-Keywords={l}'
+                            for l in labels
+                        ]
                         et.execute_raw(
                             file_name,
-                            *keywords
+                            *params
                         )
