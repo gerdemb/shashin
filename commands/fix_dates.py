@@ -21,7 +21,7 @@ class FixDatesCommand(object):
                     metadata = et.get_metadata(file_name)
                     # Sanity Check that actual metadata matches data in DB
                     if "DateTimeOriginal" not in metadata:
-                        date_time_original = metadata['FileModifyDate'][:19]
+                        date_time_original = metadata['FileModifyDate']
                         params = [
                             file_name,
                             '-DateTimeOriginal="{}"'.format(date_time_original)
