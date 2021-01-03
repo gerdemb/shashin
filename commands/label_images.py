@@ -23,7 +23,8 @@ class LabelImagesCommand(object):
         with DB(self.database) as db:
             with Exif() as et:
                 for row in db.image_select_random_no_keywords(1):
-                    with open(row['file_name'], 'rb') as image_file:
+                    file_name = row['file_name']
+                    with open(file_name, 'rb') as image_file:
                         encoded_image = base64.b64encode(image_file.read()).decode()
                         data = json.dumps(
                             {
@@ -46,4 +47,13 @@ class LabelImagesCommand(object):
                             self.URL,
                             data = data
                         )
-                        print(row['file_name'], response.content)
+                        content = json.loads(response.content)
+                        keywords = [
+                            '-Keywords=' + l['description']
+                            for l in content['responses'][0]['labelAnnotations']
+                        ]
+                        print(file_name, keywords)
+                        et.execute_raw(
+                            file_name,
+                            *keywords
+                        )
