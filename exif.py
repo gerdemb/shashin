@@ -14,7 +14,7 @@ class Exif(ExifTool):
     
     def execute_raw(self, *params):
         params = map(fsencode, params)
-        return self.execute(*params)
+        return super().execute(*params).decode("utf-8")
 
     def execute_json(self, *params):
         json = super().execute_json(*params)

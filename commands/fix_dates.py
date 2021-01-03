@@ -1,8 +1,4 @@
-import tempfile
-from pathlib import Path
-
-from wand.exceptions import DelegateError
-from wand.image import Image
+import sys
 
 from db import DB
 from exif import Exif
@@ -21,10 +17,13 @@ class FixDatesCommand(object):
                     metadata = et.get_metadata(file_name)
                     # Sanity Check that actual metadata matches data in DB
                     if "DateTimeOriginal" not in metadata:
-                        date_time_original = metadata['FileModifyDate']
+                        file_modify_date = metadata['FileModifyDate']
                         params = [
-                            file_name,
-                            '-DateTimeOriginal="{}"'.format(date_time_original)
+                            f'-DateTimeOriginal={file_modify_date}'
                         ]
-                        result = et.execute_raw(*params)
-                        print(file_name, date_time_original, result)
+                        result = et.execute_raw(
+                            file_name,
+                            *params
+                        )
+                        print(file_name, params, result)
+                        sys.exit()
