@@ -25,4 +25,4 @@ class FixDatesCommand(object):
                             file_name,
                             *params
                         )
-                        print(file_name, params, result)
+                        print(file_name, params, result.strip())
