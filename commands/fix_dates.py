@@ -26,4 +26,3 @@ class FixDatesCommand(object):
                             *params
                         )
                         print(file_name, params, result)
-                        sys.exit()
