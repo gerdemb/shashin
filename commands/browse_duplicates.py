@@ -19,7 +19,8 @@ class BrowseDuplicatesCommand(object):
     def __init__(self, config):
         self.library_path = Path(config.library)
         self.database_path = config.database
-        self.features_path = config.features_path
+        self.features_path = Path(config.features_path)
+        self.features_path.mkdir(parents=True, exist_ok=True)
 
         # TODO make these configurable
         self.FIRST_KEYS = [
