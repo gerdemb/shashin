@@ -12,6 +12,73 @@ from utils import delete_image
 from wand.image import Image
 from werkzeug.exceptions import abort
 from werkzeug.routing import PathConverter
+import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+
+class Predictor(object):
+    def __init__(self, database_path, features_path):
+        self.database_path = database_path
+        self.features_path = features_path
+
+    def predict(metadata_a, metadata_b):
+        feature = self.cmp_metadata(metadata_a, metadata_b)
+        for col in self.columns:
+            if col not in feature:
+                feature[col] = 0
+        return self.model.predict(feature)
+
+
+    def build_model(self):
+        X, y = self.extract_features()
+
+        self.model = RandomForestClassifier()
+        self.model.fit(X, y)
+
+        self.columns = list(X.columns)
+
+
+    def extract_features(self):
+        features = self.load_json_features()
+        df = pd.DataFrame.from_records(features)
+        df = df.append(df * -1)
+        df = df.fillna(0)
+        return df.drop('Delete', axis=1), df['Delete']
+
+    def load_json_features(self):
+        features = []
+        with DB(self.database_path) as db:
+            for file in self.features_path.glob('*.json'):
+                dhash, metadata_b = list(json.load(file.open()).items())[0]
+                for row in db.image_select_by_dhash(bytes.fromhex(dhash)):
+                    metadata_a = json.loads(row['metadata'])
+                    feature = self.cmp_metadata(metadata_a, metadata_b)
+                    feature['Delete'] = 1 # Delete B (right-side)
+                    features.append(feature)
+        return features
+
+    @staticmethod
+    def cmp_metadata(metadata_a, metadata_b):
+        def cmp(a, b):
+            if a is not None and b is not None:
+                return (a > b) - (a < b)
+            elif a is None and b is None:
+                return 0
+            elif a is None:
+                return -1
+            elif b is None:
+                return 1
+
+        keys = set(list(metadata_a.keys()) + list(metadata_b.keys()))
+
+        feature = {}
+        for key in keys:
+            a = metadata_a.get(key)
+            b = metadata_b.get(key)
+            if isinstance(a, str): a=len(a)
+            if isinstance(b, str): b=len(b)
+            feature[key] = cmp(a,b)
+        return feature
+
 
 
 class BrowseDuplicatesCommand(object):
@@ -19,7 +86,7 @@ class BrowseDuplicatesCommand(object):
     def __init__(self, config):
         self.library_path = Path(config.library)
         self.database_path = config.database
-        self.features_path = Path(config.features_path)
+        self.features_path = Path(config.features_path).expanduser()
         self.features_path.mkdir(parents=True, exist_ok=True)
 
         # TODO make these configurable
@@ -34,6 +101,9 @@ class BrowseDuplicatesCommand(object):
         self.IGNORE_KEYS = [
             'Directory',
         ]
+
+        self.predictor = Predictor(self.database_path, self.features_path)
+        self.predictor.build_model()
 
     @staticmethod
     def estimate_percentage(hash):
@@ -70,9 +140,12 @@ class BrowseDuplicatesCommand(object):
     def log_metadata(self, row):
         log = tempfile.NamedTemporaryFile(
             dir = self.features_path,
-            delete=False, 
+            mode='w',
+            delete=False,
+            prefix='img',
             suffix='.json'
         )
+        print(log.name)
         dhash = row['dhash'].hex()
         metadata = json.loads(row['metadata'])
         data = {
