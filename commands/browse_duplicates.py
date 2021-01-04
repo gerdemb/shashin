@@ -79,7 +79,7 @@ class BrowseDuplicatesCommand(object):
         }
         log.write(json.dumps(data))
         log.close()
-        
+
     def execute(self):
         app = Flask(__name__, )
         app.url_map.converters['everything'] = EverythingConverter
@@ -148,7 +148,7 @@ class BrowseDuplicatesCommand(object):
                     else:
                         return send_file(str(file))
                 elif request.method == 'DELETE':
-                    self.log_metadata(db, row)
+                    self.log_metadata(row)
                     delete_image(db, file)
                     return 'True'
 
