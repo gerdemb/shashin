@@ -64,6 +64,17 @@ class BrowseDuplicatesCommand(object):
             diff_keys)))
         return order_keys
 
+    @staticmethod
+    def log_metadata(db, row):
+        file_name = row['file_name']
+        dhash = row['dhash']
+
+        for r in db.image_select_by_dhash(dhash):
+            if r['file_name'] == file_name:
+                print("Deleted", r['file_name'])
+            else:
+                print("Kept", r['file_name'])
+
     def execute(self):
         app = Flask(__name__, )
         app.url_map.converters['everything'] = EverythingConverter
@@ -119,8 +130,8 @@ class BrowseDuplicatesCommand(object):
         def serve_pictures(file_name):
             with DB(self.database_path) as db:
                 file = self.library_path / file_name
-
-                if not db.image_select_by_file_name(str(file)):
+                row = db.image_select_by_file_name(str(file))
+                if not row:
                     abort(404)
                 if request.method == 'GET':
                     if file.suffix == '.HEIC':
@@ -132,6 +143,7 @@ class BrowseDuplicatesCommand(object):
                     else:
                         return send_file(str(file))
                 elif request.method == 'DELETE':
+                    self.log_metadata(db, row)
                     delete_image(db, file)
                     return 'True'
 
