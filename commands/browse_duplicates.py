@@ -14,18 +14,24 @@ from werkzeug.exceptions import abort
 from werkzeug.routing import PathConverter
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
+from functools import cmp_to_key
 
 class Predictor(object):
     def __init__(self, database_path, features_path):
         self.database_path = database_path
         self.features_path = features_path
 
-    def predict(metadata_a, metadata_b):
-        feature = self.cmp_metadata(metadata_a, metadata_b)
-        for col in self.columns:
-            if col not in feature:
-                feature[col] = 0
-        return self.model.predict(feature)
+    def predict(self, metadata_a, metadata_b):
+        comparison = self.cmp_metadata(metadata_a, metadata_b)
+        feature = {
+            col: comparison.get(col, 0)
+            for col in self.columns
+        }
+
+        df = pd.DataFrame.from_records([feature])
+        prediction = self.model.predict(df)
+        print(metadata_a['SourceFile'], metadata_b['SourceFile'], prediction)
+        return prediction
 
 
     def build_model(self):
@@ -42,7 +48,7 @@ class Predictor(object):
         df = pd.DataFrame.from_records(features)
         df = df.append(df * -1)
         df = df.fillna(0)
-        return df.drop('Delete', axis=1), df['Delete']
+        return df.drop('Keep', axis=1), df['Keep']
 
     def load_json_features(self):
         features = []
@@ -52,7 +58,7 @@ class Predictor(object):
                 for row in db.image_select_by_dhash(bytes.fromhex(dhash)):
                     metadata_a = json.loads(row['metadata'])
                     feature = self.cmp_metadata(metadata_a, metadata_b)
-                    feature['Delete'] = 1 # Delete B (right-side)
+                    feature['Keep'] = -1 # Keep A (left-side)
                     features.append(feature)
         return features
 
@@ -145,7 +151,6 @@ class BrowseDuplicatesCommand(object):
             prefix='img',
             suffix='.json'
         )
-        print(log.name)
         dhash = row['dhash'].hex()
         metadata = json.loads(row['metadata'])
         data = {
@@ -160,23 +165,10 @@ class BrowseDuplicatesCommand(object):
 
         @app.route('/')
         def index():
-            def sort_key(t):
-                _, r = t
-                Megapixels = r['Megapixels']
-                FileSize = r['FileSize']
-                FileStem = Path(r['FileName']).stem
-                FileSuffix = Path(r['FileName']).suffix
-                DateTimeOriginal = r.get('DateTimeOriginal', None)
-                FileModifyDate = r['FileModifyDate']
-
-                return (
-                    -Megapixels,
-                    len(FileStem),
-                    FileSuffix,
-                    DateTimeOriginal,
-                    FileModifyDate,
-                    -FileSize
-                )
+            def sort_key(a, b):
+                _, metadata_a = a
+                _, metadata_b = b
+                return self.predictor.predict(metadata_a,metadata_b)
 
             def get_metadata(r):
                 metadata = et.get_metadata(r['file_name'])
@@ -188,10 +180,10 @@ class BrowseDuplicatesCommand(object):
                     duplicates = {}
                     tags = {}
                     rows = db.image_select_duplicate_dhash(start)
-                    for dhash, rows in groupby(rows, lambda x: x['dhash']):
+                    for dhash, rows in groupby(rows, lambda x: x['dhash']):                            
                         duplicate_group = OrderedDict(sorted(
                             map(get_metadata, rows),
-                            key=sort_key
+                            key=cmp_to_key(sort_key)
                         ))
                         duplicates[dhash.hex()] = duplicate_group
                         diff_tags = self.get_diff_tags(duplicate_group.values())
