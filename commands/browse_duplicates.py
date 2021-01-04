@@ -1,17 +1,17 @@
+import json
 import tempfile
-from collections import defaultdict, OrderedDict
+from collections import OrderedDict, defaultdict
 from itertools import groupby
 from math import floor, log10
 from pathlib import Path
 
-from flask import request, Flask, render_template, send_file
+from db import DB
+from exif import Exif
+from flask import Flask, render_template, request, send_file
+from utils import delete_image
 from wand.image import Image
 from werkzeug.exceptions import abort
 from werkzeug.routing import PathConverter
-
-from db import DB
-from exif import Exif
-from utils import delete_image
 
 
 class BrowseDuplicatesCommand(object):
@@ -19,6 +19,8 @@ class BrowseDuplicatesCommand(object):
     def __init__(self, config):
         self.library_path = Path(config.library)
         self.database_path = config.database
+        self.features_path = config.features_path
+
         # TODO make these configurable
         self.FIRST_KEYS = [
             'SourceFile',
@@ -64,17 +66,20 @@ class BrowseDuplicatesCommand(object):
             diff_keys)))
         return order_keys
 
-    @staticmethod
-    def log_metadata(db, row):
-        file_name = row['file_name']
-        dhash = row['dhash']
-
-        for r in db.image_select_by_dhash(dhash):
-            if r['file_name'] == file_name:
-                print("Deleted", r['file_name'])
-            else:
-                print("Kept", r['file_name'])
-
+    def log_metadata(self, row):
+        log = tempfile.NamedTemporaryFile(
+            dir = self.features_path,
+            delete=False, 
+            suffix='.json'
+        )
+        dhash = row['dhash'].hex()
+        metadata = json.loads(row['metadata'])
+        data = {
+            dhash: metadata 
+        }
+        log.write(json.dumps(data))
+        log.close()
+        
     def execute(self):
         app = Flask(__name__, )
         app.url_map.converters['everything'] = EverythingConverter
