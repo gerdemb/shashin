@@ -20,8 +20,12 @@ class Predictor(object):
     def __init__(self, database_path, features_path):
         self.database_path = database_path
         self.features_path = features_path
+        self.model = None
+        self.columns = None
 
     def predict(self, metadata_a, metadata_b):
+        if not self.model:
+            return 0
         comparison = self.cmp_metadata(metadata_a, metadata_b)
         feature = {
             col: comparison.get(col, 0)
@@ -33,33 +37,34 @@ class Predictor(object):
         print(metadata_a['SourceFile'], metadata_b['SourceFile'], prediction)
         return prediction
 
-
     def build_model(self):
-        X, y = self.extract_features()
+        features = self.load_json_features()
+        if not features:
+            return
+
+        df = pd.DataFrame.from_records(features)
+        df = df.append(df * -1)
+        df = df.fillna(0)
+        
+        X = df.drop('Keep', axis=1)
+        y = df['Keep']
 
         self.model = RandomForestClassifier()
         self.model.fit(X, y)
 
         self.columns = list(X.columns)
 
-
-    def extract_features(self):
-        features = self.load_json_features()
-        df = pd.DataFrame.from_records(features)
-        df = df.append(df * -1)
-        df = df.fillna(0)
-        return df.drop('Keep', axis=1), df['Keep']
-
     def load_json_features(self):
         features = []
         with DB(self.database_path) as db:
             for file in self.features_path.glob('*.json'):
-                dhash, metadata_b = list(json.load(file.open()).items())[0]
-                for row in db.image_select_by_dhash(bytes.fromhex(dhash)):
-                    metadata_a = json.loads(row['metadata'])
-                    feature = self.cmp_metadata(metadata_a, metadata_b)
-                    feature['Keep'] = -1 # Keep A (left-side)
-                    features.append(feature)
+                with file.open() as f:
+                    dhash, metadata_b = json.load(f)
+                    for row in db.image_select_by_dhash(bytes.fromhex(dhash)):
+                        metadata_a = json.loads(row['metadata'])
+                        feature = self.cmp_metadata(metadata_a, metadata_b)
+                        feature['Keep'] = -1 # Keep A (left-side)
+                        features.append(feature)
         return features
 
     @staticmethod
@@ -144,20 +149,19 @@ class BrowseDuplicatesCommand(object):
         return order_keys
 
     def log_metadata(self, row):
-        log = tempfile.NamedTemporaryFile(
+        data = (
+            row['dhash'].hex(),
+            json.loads(row['metadata'])
+        )
+        data_json = json.dumps(data)
+        with tempfile.NamedTemporaryFile(
             dir = self.features_path,
             mode='w',
             delete=False,
             prefix='img',
             suffix='.json'
-        )
-        dhash = row['dhash'].hex()
-        metadata = json.loads(row['metadata'])
-        data = {
-            dhash: metadata 
-        }
-        log.write(json.dumps(data))
-        log.close()
+        ) as log:
+            log.write(data_json)
 
     def execute(self):
         app = Flask(__name__, )
@@ -197,7 +201,7 @@ class BrowseDuplicatesCommand(object):
                                            tags=tags,
                                            percentage=percentage)
 
-        @app.route('/image/<everything:file_name>', methods=['GET', 'DELETE'])
+        @app.route('/image/<everything:file_name>', methods=['GET', 'DELETE', 'POST'])
         def serve_pictures(file_name):
             with DB(self.database_path) as db:
                 file = self.library_path / file_name
@@ -216,6 +220,9 @@ class BrowseDuplicatesCommand(object):
                 elif request.method == 'DELETE':
                     self.log_metadata(row)
                     delete_image(db, file)
+                    return 'True'
+                elif request.method == 'POST':
+                    db.ignore_insert_dhash(row['dhash'])
                     return 'True'
 
         app.run(host='0.0.0.0', port=8000)
