@@ -3,9 +3,11 @@
 import sys
 
 import configargparse
+from environs import Env
 
 import exceptions
-from commands import _import, organize_library, random_snapshots, browse_duplicates, fix_dates
+from commands import (_import, browse_duplicates, fix_dates, label_images,
+                      organize_library, random_snapshots)
 
 DEFAULT_CONFIG_FILE = '~/.config/shashin/shashin.conf'
 DEFAULT_DATABASE_FILE = '~/.config/shashin/shashin.db'
@@ -17,6 +19,9 @@ DEFAULT_HIERARCHY = r'''
 {% endif %}
 '''
 
+env = Env()
+env.read_env()
+GOOGLE_APPLICATION_CREDENTIALS = env("GOOGLE_APPLICATION_CREDENTIALS")
 
 def get_parser():
     parser = configargparse.ArgumentParser(add_help=False, default_config_files=[DEFAULT_CONFIG_FILE],
@@ -67,6 +72,12 @@ def get_parser():
 
     fix_dates_parser = subparsers.add_parser("fix-dates")
     fix_dates_parser.set_defaults(cls=fix_dates.FixDatesCommand)
+    
+    label_images_parser = subparsers.add_parser(
+        "label-images",
+        help="Use Google Vision AI to automatically label images"
+    )
+    label_images_parser.set_defaults(cls=label_images.LabelImagesCommand)
 
     return parser
 

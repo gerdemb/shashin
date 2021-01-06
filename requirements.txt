@@ -5,3 +5,8 @@ PyExifTool==0.1.1
 Send2Trash==1.5.0
 Wand==0.5.8
 PyYAML==5.3
+# Errors installing dependant grpcio module on Synology NAS
+# google-cloud-vision==1.0.0
+google-auth==1.23.0
+environs==9.3.0
+requests==2.25.1
