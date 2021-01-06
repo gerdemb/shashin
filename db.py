@@ -3,8 +3,8 @@ from pathlib import Path
 import json
 
 class DB(object):
-    def __init__(self, database_file):
-        self._database_file = Path(database_file).expanduser()
+    def __init__(self, cache_dir):
+        self._database_file = cache_dir / "shashin.db"
 
     def __enter__(self):
         self._db_connection = sqlite3.connect(str(self._database_file), timeout=30.0)
@@ -53,10 +53,11 @@ class DB(object):
         ''')
         self._db_cur.row_factory = sqlite3.Row
 
-    def image_insert(self, **kwargs):
+    def image_insert_or_replace(self, **kwargs):
         kwargs['metadata'] = json.dumps(kwargs['metadata'])
+        kwargs['file_name'] = str(kwargs['file_name'])
         self._execute(r'''
-            INSERT INTO images (file_name, mtime, size, md5, dhash, metadata) 
+            INSERT OR REPLACE INTO images (file_name, mtime, size, md5, dhash, metadata) 
             VALUES (:file_name, :mtime, :size, :md5, :dhash, :metadata)
         ''', kwargs)
         self._execute(r'''
@@ -75,6 +76,7 @@ class DB(object):
         ''', (dhash,))
 
     def image_select_by_file_name(self, file_name):
+        file_name = str(file_name)
         return self._execute(r'''
             SELECT * FROM images WHERE file_name = ?
         ''', (file_name,)).fetchone()

@@ -10,10 +10,6 @@ class Exif(ExifTool):
         for d in json:
             for k in list(d.keys()):
                 d[k.split(':')[-1]] = d.pop(k)
-    
-    def execute_raw(self, *params):
-        params = map(fsencode, params)
-        return super().execute(*params).decode("utf-8")
 
     def execute_json(self, *params):
         json = super().execute_json(*params)

@@ -95,7 +95,7 @@ class Predictor(object):
 
 
 
-class BrowseDuplicatesCommand(object):
+class BrowseCommand(object):
 
     def __init__(self, config):
         self.library_path = Path(config.library)
