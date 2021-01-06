@@ -38,6 +38,7 @@ class Predictor(object):
         return prediction
 
     def build_model(self):
+        print("Loading Features")
         features = self.load_json_features()
         if not features:
             return
@@ -49,10 +50,12 @@ class Predictor(object):
         X = df.drop('Keep', axis=1)
         y = df['Keep']
 
+        print("Fitting Model")
         self.model = RandomForestClassifier()
         self.model.fit(X, y)
 
         self.columns = list(X.columns)
+        print("...done")
 
     def load_json_features(self):
         features = []
