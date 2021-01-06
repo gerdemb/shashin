@@ -20,13 +20,16 @@
             {% for img_src, img in duplicates.items() %}
             <div class="col">
                 <div class="card h-100">
-                    <a href="/image/{{ img_src }}">
-                        <img src="/image/{{ img_src }}" class="card-img-top">
+                    <a href="/image/{{ img_src|urlencode }}">
+                        <img src="/image/{{ img_src|urlencode }}" class="card-img-top">
                     </a>
                     <div class="card-header">
                         <a class="btn btn-danger delete-btn" role="button"
-                            data-name="{{ img_src }}">
+                            data-name="{{ img_src|urlencode }}">
                             Delete</a>
+                        <a class="btn ignore-btn" role="button"
+                            data-name="{{ img_src|urlencode }}">
+                            Ignore</a>
                     </div>
                     <div class="card-body">
                         <!-- <h5 class="card-title">{{ img['file_name'] }}</h5> -->
@@ -99,6 +102,15 @@
             $.ajax({
                 url: image,
                 type: 'DELETE'
+            }).done(function (data) { parent.addClass('fade'); });
+        });
+        $(".ignore-btn").click(function () {
+            var image = "image/" + $(this).data("name");
+            var parent = $(this).parent().parent();
+
+            $.ajax({
+                url: image,
+                type: 'POST'
             }).done(function (data) { parent.addClass('fade'); });
         });
 

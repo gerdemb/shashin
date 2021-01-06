@@ -45,6 +45,10 @@ class DB(object):
             dhash
         );
 
+        CREATE TABLE IF NOT EXISTS ignore 
+        (
+            dhash BLOB PRIMARY KEY
+        );
 
         ''')
         self._db_cur.row_factory = sqlite3.Row
@@ -54,6 +58,9 @@ class DB(object):
         self._execute(r'''
             INSERT INTO images (file_name, mtime, size, md5, dhash, metadata) 
             VALUES (:file_name, :mtime, :size, :md5, :dhash, :metadata)
+        ''', kwargs)
+        self._execute(r'''
+            DELETE FROM ignore WHERE dhash = :dhash
         ''', kwargs)
         self._commit()
 
@@ -101,7 +108,9 @@ class DB(object):
             INNER JOIN (
                 SELECT dhash
                 FROM images 
-                WHERE dhash > ?
+                WHERE 
+                    dhash > ? AND
+                    dhash NOT IN (SELECT dhash FROM ignore)
                 GROUP BY dhash 
                 HAVING count(dhash) > 1
                 ORDER BY dhash
@@ -131,4 +140,11 @@ class DB(object):
                 cursor2.execute(r'''
                     DELETE FROM images WHERE file_name = ?
                 ''', (row['file_name'],))
+        self._commit()
+
+    def ignore_insert_dhash(self, dhash):
+        self._execute(r'''
+            INSERT OR IGNORE INTO ignore (dhash) 
+            VALUES (?)
+        ''', (dhash,))
         self._commit()

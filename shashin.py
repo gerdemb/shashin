@@ -11,6 +11,7 @@ from commands import (_import, browse_duplicates, fix_dates, label_images,
 
 DEFAULT_CONFIG_FILE = '~/.config/shashin/shashin.conf'
 DEFAULT_DATABASE_FILE = '~/.config/shashin/shashin.db'
+DEFAULT_FEATURES_DIR = '~/.config/shashin/features/'
 DEFAULT_HIERARCHY = r'''
 {% if DateTimeOriginal and DateTimeOriginal|datetime %}
     {{ DateTimeOriginal|datetime('%Y/%m/%d') }}
@@ -68,6 +69,7 @@ def get_parser():
 
     browse_duplicates_parser = subparsers.add_parser("browse-duplicates",
                                                      help="Start a server to allow browsing of duplicate images")
+    browse_duplicates_parser.add_argument('--features-path', default=DEFAULT_FEATURES_DIR)
     browse_duplicates_parser.set_defaults(cls=browse_duplicates.BrowseDuplicatesCommand)
 
     fix_dates_parser = subparsers.add_parser("fix-dates")
