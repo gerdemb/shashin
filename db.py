@@ -7,7 +7,7 @@ class DB(object):
         self._database_file = Path(database_file).expanduser()
 
     def __enter__(self):
-        self._db_connection = sqlite3.connect(str(self._database_file))
+        self._db_connection = sqlite3.connect(str(self._database_file), timeout=30.0)
         self._db_cur = self._db_connection.cursor()
         self._init_db()
         return self
