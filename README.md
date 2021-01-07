@@ -25,6 +25,8 @@
 
 Open http://localhost:8000/
 
+## Security
+The web interface should be served for local browsers only. There is no security and any external user could view or delete images. Additionally the complete path location of each image (ie. `/Users/admin/photos/album/img_1.jpg`) is exposed to the browser. 
 
 ## Architecture
 On an import, the md5 hash and dhash of each file is calculated and stored in an sqlite3 database. This database is
