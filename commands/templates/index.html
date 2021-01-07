@@ -21,8 +21,8 @@
             {% set img_src = img['SourceFile']|urlencode %}
             <div class="col">
                 <div class="card h-100">
-                    <a href="/image{{ img_src }}">
-                        <img src="/image{{ img_src }}" class="card-img-top">
+                    <a href="/image/{{ img_src }}">
+                        <img src="/image/{{ img_src }}" class="card-img-top">
                     </a>
                     <div class="card-header">
                         <a class="btn btn-danger delete-btn" role="button"

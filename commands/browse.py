@@ -130,7 +130,7 @@ class BrowseCommand(object):
         @app.route('/image/<everything:file_name>', methods=['GET', 'DELETE', 'POST'])
         def serve_pictures(file_name):
             with DB(self.cache_dir) as db:
-                file = Path('/') / Path(file_name)
+                file = Path(file_name)
                 row = db.image_select_by_file_name(str(file))
                 if not row:
                     abort(404)

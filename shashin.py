@@ -5,9 +5,19 @@ from pathlib import Path
 import sys
 
 from exceptions import UserError
-from commands import browse, scan
+from commands import browse, scan, cp, mv
 
 CACHE_DIR = '~/.cache/shashin/'
+
+# TODO make configurable
+DEFAULT_HIERARCHY = r'''
+{% if DateTimeOriginal and DateTimeOriginal|datetime %}
+    {{ DateTimeOriginal|datetime('%Y/%m/%d') }}
+{% else %}
+    {{ FileModifyDate|datetime('%Y/%m/%d') }}
+{% endif %}
+'''
+
 
 
 def get_parser():
@@ -24,6 +34,18 @@ def get_parser():
 
     browse_parser = subparsers.add_parser("browse")
     browse_parser.set_defaults(cls=browse.BrowseCommand)
+
+    cp_parser = subparsers.add_parser("cp")
+    cp_parser.add_argument("src")
+    cp_parser.add_argument("dest")
+    cp_parser.add_argument('--hierarchy', default=DEFAULT_HIERARCHY)    
+    cp_parser.set_defaults(cls=cp.CopyCommand)
+
+    mv_parser = subparsers.add_parser("mv")
+    mv_parser.add_argument("src")
+    mv_parser.add_argument("dest")
+    mv_parser.add_argument('--hierarchy', default=DEFAULT_HIERARCHY)    
+    mv_parser.set_defaults(cls=mv.MoveCommand)
 
     return parser
 

@@ -1,3 +1,4 @@
+from file_utils import path_file_walk
 from exceptions import UserError
 import hashlib
 import sqlite3
@@ -8,19 +9,6 @@ from dhash import dhash_row_col, format_bytes
 from exif import Exif
 from wand.exceptions import DelegateError, MissingDelegateError
 from wand.image import Image
-
-
-def path_file_walk(path):
-    if path.is_file():
-        yield path
-    else:
-        for child in sorted(path.iterdir()):
-            if child.is_file():
-                yield child
-            elif child.is_dir():
-                # TODO make configurable
-                if child.name != '@eaDir':
-                    yield from path_file_walk(child)
 
 
 class ScanCommand(object):
@@ -34,7 +22,7 @@ class ScanCommand(object):
     def execute(self):
         with DB(self.cache_dir) as db:
             with Exif() as et:
-                self.scan_files(db,et)
+                self.scan_files(db, et)
             self.scan_db(db)
 
     def scan_files(self, db, et):
@@ -49,9 +37,9 @@ class ScanCommand(object):
             if row and row['mtime'] == mtime and row['size'] == size:
                 # File in db and unchanged
                 continue
-            # File md5 or size doesn't match database or file is missing
+            # File is missing from DB or has been modified
             try:
-                metadata = et.get_metadata(str(file))
+                metadata = et.get_metadata(file)
             except Exception as e:
                 print("Error {} {}".format(file, e))
                 continue

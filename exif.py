@@ -17,7 +17,7 @@ class Exif(ExifTool):
         return json
 
     def get_metadata(self, filename):
-        metadata = super().get_metadata(filename)
+        metadata = super().get_metadata(str(filename))
         if 'Error' in metadata:
             raise ExifError(metadata['Error'])
         return metadata
