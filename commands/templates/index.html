@@ -15,20 +15,21 @@
 
 <body>
     <div class="container">
-        {% for hash, duplicates in duplicates|dictsort %}
+        {% for group in duplicates %}
         <div class="row row-cols-2 mt-3">
-            {% for img_src, img in duplicates.items() %}
+            {% for img in group['images'] %}
+            {% set img_src = img['SourceFile']|urlencode %}
             <div class="col">
                 <div class="card h-100">
-                    <a href="/image/{{ img_src|urlencode }}">
-                        <img src="/image/{{ img_src|urlencode }}" class="card-img-top">
+                    <a href="/image{{ img_src }}">
+                        <img src="/image{{ img_src }}" class="card-img-top">
                     </a>
                     <div class="card-header">
                         <a class="btn btn-danger delete-btn" role="button"
-                            data-name="{{ img_src|urlencode }}">
+                            data-name="{{ img_src }}">
                             Delete</a>
                         <a class="btn ignore-btn" role="button"
-                            data-name="{{ img_src|urlencode }}">
+                            data-name="{{ img_src }}">
                             Ignore</a>
                     </div>
                     <div class="card-body">
@@ -36,7 +37,7 @@
                         <dl class="row">
                             <table class="table table-sm" style="table-layout: fixed;">
                                 <tbody>
-                                    {% for tag in tags[hash] %}
+                                    {% for tag in group['tags'] %}
                                     <tr>
                                         <td class="small text-truncate">{{ tag }}</td>
                                         <td class="small text-truncate">
@@ -72,7 +73,7 @@
                 <nav class="mt-1">
                     <ul class="pagination justify-content-center">
                         <li class="page-item"><a class="page-link" href="/">&LeftArrowBar; Beginning</a></li>
-                        <li class="page-item"><a class="page-link" href="?start={{ hash }}">Next &rarr;</a></li>
+                        <li class="page-item"><a class="page-link" href="?start={{ last_dhash }}">Next &rarr;</a></li>
                     </ul>
                 </nav>
             </div>

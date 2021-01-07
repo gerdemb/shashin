@@ -4,7 +4,7 @@ import json
 
 class DB(object):
     def __init__(self, cache_dir):
-        self._database_file = cache_dir / "shashin.db"
+        self._database_file = cache_dir / "shashin.sqlite3"
 
     def __enter__(self):
         self._db_connection = sqlite3.connect(str(self._database_file), timeout=30.0)
@@ -81,28 +81,6 @@ class DB(object):
             SELECT * FROM images WHERE file_name = ?
         ''', (file_name,)).fetchone()
 
-    def image_select_all(self):
-        return self._execute(r'''
-            SELECT * FROM images
-        ''')
-
-    def image_select_random(self, num):
-        return self._execute(r'''
-            SELECT * FROM images ORDER BY RANDOM() LIMIT ?
-        ''', (num,))
-
-    # TODO add other image types besides JPEG
-    def image_select_random_no_keywords(self, num):
-        return self._execute(r'''
-            SELECT * 
-            FROM images 
-            WHERE 
-                json_extract(metadata, '$.Keywords') IS NULL AND
-                json_extract(metadata, '$.DateTimeOriginal') IS NOT NULL AND
-                json_extract(metadata, '$.FileType') = 'JPEG'
-            ORDER BY RANDOM() LIMIT ?
-        ''', (num,))
-
     def image_select_duplicate_dhash(self, start='', limit=10):
         return self._execute(r'''
             SELECT *
@@ -120,11 +98,6 @@ class DB(object):
                 ) dups ON images.dhash = dups.dhash
             ORDER BY dhash;
         ''', (start, limit))
-
-    def image_select_date_time_original_is_null(self):
-        return self._execute(r'''
-            SELECT * FROM images WHERE json_extract(metadata, '$.DateTimeOriginal') IS NULL
-        ''')
 
     def image_delete(self, file_name):
         self._execute(r'''
