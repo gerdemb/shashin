@@ -110,11 +110,11 @@ class BrowseCommand(object):
                 if not row:
                     abort(404)
                 if request.method == 'GET':
-                    self.send_image(file)
+                    return self.send_image(file)
                 elif request.method == 'DELETE':
-                    self.delete_image(db, row, self.cache_dir)
+                    return self.delete_image(db, row, self.cache_dir)
                 elif request.method == 'POST':
-                    self.ignore_image(db, row)
+                    return self.ignore_image(db, row)
                     
         app.run(host='0.0.0.0', port=8000)
 
