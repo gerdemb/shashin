@@ -47,6 +47,8 @@ class ScanCommand(object):
                 continue
             md5 = self.calculate_md5(file)
             dhash = self.calculate_dhash(et, file)
+            if not dhash:
+                dhash = md5
 
             data = {
                 'mtime': mtime,
@@ -68,13 +70,14 @@ class ScanCommand(object):
                 return sqlite3.Binary(format_bytes(*dhash_row_col(image)))
         except (MissingDelegateError, DelegateError):
             # Unable to load Image. Probably a video.
-            # Strip all metadata and calculate md5 hash. This is not a perceptual dhash but will still allow us to match files with identical content, but different metadata.
-            tmp = NamedTemporaryFile(delete=False)
-            tmp.close()
-            et.execute_raw(str(file), "-all=", "-o", tmp.name)
-            md5 = ScanCommand.calculate_md5(Path(tmp.name))
-            os.unlink(tmp.name)
-            return md5
+            # Perceptual hashes are not supported for videos, use an md5 hash instead.
+            # First, try to strip all metadata and calculate md5 hash. 
+            # exiftool doesn't support modifying tags for most videos, so this usually (always?) fails.
+            with NamedTemporaryFile() as t:
+                tmp = Path(t.name)
+                et.execute_raw(str(file), "-all=", "-o", str(tmp))
+                if tmp.stat().st_size > 0:
+                    return ScanCommand.calculate_md5(tmp)
 
 
     @staticmethod
