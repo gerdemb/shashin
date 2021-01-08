@@ -100,6 +100,7 @@ class DB(object):
         ''', (start, limit))
 
     def image_delete(self, file_name):
+        file_name = str(file_name)
         self._execute(r'''
             DELETE FROM images WHERE file_name = ?
         ''', (file_name,))

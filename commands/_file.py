@@ -5,7 +5,7 @@ from pathlib import Path
 from db import DB
 from exceptions import UserError
 from exif import Exif
-from file_utils import path_file_walk
+from file_utils import action_required, check_destination, path_file_walk
 from jinja2 import Environment
 
 
@@ -65,6 +65,9 @@ class FileCommand(object):
 
                     hierarchy = self.template.render(metadata).strip()
                     dest_path = self.dest / hierarchy
-                    final_destination = self.action(file, dest_path)
-                    if final_destination:
-                        print(f"{file} -> {final_destination}")
+
+                    if action_required(file, dest_path):
+                        if self.action(file, dest_path):
+                            print(f"{file} -> {dest_path}")
+                        else:
+                            print(f"Skipping existing file {file} -> {dest_path}")

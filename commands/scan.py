@@ -1,12 +1,13 @@
-from file_utils import path_file_walk
-from exceptions import UserError
 import hashlib
 import sqlite3
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 
 from db import DB
 from dhash import dhash_row_col, format_bytes
+from exceptions import UserError
 from exif import Exif
+from file_utils import path_file_walk
 from wand.exceptions import DelegateError, MissingDelegateError
 from wand.image import Image
 
@@ -43,14 +44,8 @@ class ScanCommand(object):
             except Exception as e:
                 print("Error {} {}".format(file, e))
                 continue
-            md5 = sqlite3.Binary(hashlib.md5(file.read_bytes()).digest())
-
-            try:
-                with Image(filename=str(file)) as image:
-                    dhash = sqlite3.Binary(format_bytes(*dhash_row_col(image)))
-            except (MissingDelegateError, DelegateError):
-                # Unrecognized image. Maybe a video?
-                dhash = None
+            md5 = self.calculate_md5(file)
+            dhash = self.calculate_dhash(et, file)
 
             data = {
                 'mtime': mtime,
@@ -65,7 +60,28 @@ class ScanCommand(object):
             )
             print(f"Added {file}")
 
-    def scan_db(self, db):
+    @staticmethod
+    def calculate_dhash(et, file):
+        try:
+            with Image(filename=str(file)) as image:
+                return sqlite3.Binary(format_bytes(*dhash_row_col(image)))
+        except (MissingDelegateError, DelegateError):
+            # Unable to load Image. Probably a video.
+            # Strip all metadata and calculate md5 hash. This is not a perceptual dhash but will still allow us to match files with identical content, but different metadata.
+            with NamedTemporaryFile() as tmp:
+                et.execute_raw(str(file), "-all=", "-o", tmp.name)
+                return ScanCommand.calculate_md5(Path(tmp.name))
+
+    @staticmethod
+    def calculate_md5(file):
+        hash_md5 = hashlib.md5()
+        with file.open("rb") as f:
+            for chunk in iter(lambda: f.read(4096), b""):
+                hash_md5.update(chunk)
+        return sqlite3.Binary(hash_md5.digest())
+
+    @staticmethod
+    def scan_db(db):
         db.image_purge(
             lambda row: not Path(row['file_name']).exists()
         )

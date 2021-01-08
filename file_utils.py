@@ -1,6 +1,4 @@
 import shutil
-from pathlib import Path
-import tempfile
 
 
 def path_file_walk(path):
@@ -16,41 +14,42 @@ def path_file_walk(path):
                     yield from path_file_walk(child)
 
 
-def prepare_destination(file, dest_path):
-    # File is already at dest_path
-    if file.parent == dest_path:
-        return
-
-    # This assertion should never happen, but is included to prevent unintended data loss by accidentally
-    # overwriting files
-    # Check that destination path is a directory or doesn't exist
-    assert dest_path.is_dir() or not dest_path.exists()
-
-    # Check that file with identical name doesn't already exist in dest_path
-    if (dest_path / file.name).exists():
-        # If destination exists and file is not already a parent of the destination
-        if not is_child(dest_path, file.parent):
-            # Create a new directory under the destination
-            return Path(tempfile.mkdtemp(prefix=file.name + '.', dir=dest_path))
-    else:
-        dest_path.mkdir(parents=True, exist_ok=True)
-        return dest_path
-
-
-def mv(file, dest_path):
-    dest_path = prepare_destination(file, dest_path)
-    if dest_path:
-        return shutil.move(str(file), str(dest_path))
-
-
-def cp(file, dest_path):
-    dest_path = prepare_destination(file, dest_path)
-    if dest_path:
-        return  shutil.copy2(file, dest_path)
-
 def is_child(parent, child):
     try:
         child.relative_to(parent)
         return True
     except ValueError:
         return False
+
+
+def action_required(file, dest_path):
+    # This assertion should never happen, but is included to prevent unintended data loss by accidentally
+    # overwriting files
+    assert dest_path.is_dir() or not dest_path.exists()
+
+    return file.parent != dest_path
+
+
+def check_destination(file, dest_path):
+    # Check that file with identical name doesn't already exist in dest_path
+    return not (dest_path / file.name).exists()
+
+
+def file_operation(cmd, file, dest_path):
+    dest_path.mkdir(parents=True, exist_ok=True)
+    return cmd(str(file), str(dest_path))
+
+
+def mv(file, dest_path):
+    if check_destination(file, dest_path):
+        return file_operation(shutil.move, file, dest_path)
+
+
+def cp(file, dest_path):
+    if check_destination(file, dest_path):
+        return file_operation(shutil.copy2, file, dest_path)
+
+
+def nop(file, dest_path):
+    if check_destination(file, dest_path):
+        return dest_path / file.name

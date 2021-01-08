@@ -1,9 +1,8 @@
+from db_utils import get_cached_metadata
 import json
 import tempfile
-from collections import OrderedDict, defaultdict
 from functools import cmp_to_key
 from itertools import groupby
-from math import floor, log10
 from pathlib import Path
 
 from db import DB
@@ -62,30 +61,6 @@ class BrowseCommand(object):
     def __init__(self, config):
         self.cache_dir = config.cache_dir
 
-    @staticmethod
-    def estimate_percentage(hash):
-        # Maximum hash value as a long
-        return (100 * int.from_bytes(bytes.fromhex(hash), "big")) / 340282366920938463463374607431768211455
-
-    @staticmethod
-    def round_to_1(x):
-        return round(x, -int(floor(log10(abs(x)))))
-
-    def log_metadata(self, row):
-        data = (
-            row['dhash'].hex(),
-            json.loads(row['metadata'])
-        )
-        data_json = json.dumps(data)
-        with tempfile.NamedTemporaryFile(
-            dir=self.cache_dir,
-            mode='w',
-            delete=False,
-            prefix='img',
-            suffix='.json'
-        ) as log:
-            log.write(data_json)
-
     def execute(self):
         app = Flask(__name__, )
         app.url_map.converters['everything'] = EverythingConverter
@@ -103,7 +78,7 @@ class BrowseCommand(object):
                     duplicates = []
                     for dhash, group in groupby(rows, lambda x: x['dhash']):
                         metadata = [
-                            json.loads(row['metadata'])
+                            get_cached_metadata(et, row)
                             for row in group
                         ]
                         duplicates.append(
@@ -131,28 +106,58 @@ class BrowseCommand(object):
         def serve_pictures(file_name):
             with DB(self.cache_dir) as db:
                 file = Path(file_name)
-                row = db.image_select_by_file_name(str(file))
+                row = db.image_select_by_file_name(file)
                 if not row:
                     abort(404)
                 if request.method == 'GET':
-                    if file.suffix == '.HEIC':
-                        with Image(filename=str(file)) as img:
-                            with tempfile.NamedTemporaryFile(prefix=file.name, suffix='.JPG', delete=True) as fp:
-                                img.format = 'jpeg'
-                                img.save(filename=fp.name)
-                                return send_file(fp.name)
-                    else:
-                        return send_file(str(file))
+                    self.send_image(file)
                 elif request.method == 'DELETE':
-                    self.log_metadata(row)
-                    db.image_delete(str(file_name))
-                    send2trash(str(file_name))
-                    return 'True'
+                    self.delete_image(db, row, self.cache_dir)
                 elif request.method == 'POST':
-                    db.ignore_insert_dhash(row['dhash'])
-                    return 'True'
-
+                    self.ignore_image(db, row)
+                    
         app.run(host='0.0.0.0', port=8000)
+
+    @staticmethod
+    def send_image(file):
+        if file.suffix == '.HEIC':
+            with Image(filename=str(file)) as img:
+                with tempfile.NamedTemporaryFile(prefix=file.name, suffix='.JPG', delete=True) as fp:
+                    img.format = 'jpeg'
+                    img.save(filename=fp.name)
+                    return send_file(fp.name)
+        else:
+            return send_file(str(file))
+
+    @staticmethod
+    def delete_image(db, row, cache_dir):
+        file_name = row['file_name']
+
+        # Log metadata
+        data = (
+            row['dhash'].hex(),
+            json.loads(row['metadata'])
+        )
+        data_json = json.dumps(data)
+        with tempfile.NamedTemporaryFile(
+            dir=cache_dir,
+            mode='w',
+            delete=False,
+            prefix='img',
+            suffix='.json'
+        ) as log:
+            log.write(data_json)
+
+        db.image_delete(file_name)
+        send2trash(str(file_name))
+        return 'True'
+
+    @staticmethod
+    def ignore_image(db, row):
+        db.ignore_insert_dhash(row['dhash'])
+        return 'True'
+
+
 
 
 class EverythingConverter(PathConverter):

@@ -5,7 +5,7 @@ from pathlib import Path
 import sys
 
 from exceptions import UserError
-from commands import browse, scan, cp, mv
+from commands import browse, organize, scan, cp, mv
 
 CACHE_DIR = '~/.cache/shashin/'
 
@@ -39,14 +39,22 @@ def get_parser():
     cp_parser.add_argument("src")
     cp_parser.add_argument("dest")
     cp_parser.add_argument('--hierarchy', default=DEFAULT_HIERARCHY)    
+    cp_parser.add_argument('--dry-run', action='store_true')    
     cp_parser.set_defaults(cls=cp.CopyCommand)
 
     mv_parser = subparsers.add_parser("mv")
     mv_parser.add_argument("src")
     mv_parser.add_argument("dest")
-    mv_parser.add_argument('--hierarchy', default=DEFAULT_HIERARCHY)    
+    mv_parser.add_argument('--hierarchy', default=DEFAULT_HIERARCHY)
+    mv_parser.add_argument('--dry-run', action='store_true')    
     mv_parser.set_defaults(cls=mv.MoveCommand)
 
+    organize_parser = subparsers.add_parser("organize")
+    organize_parser.add_argument("src")
+    organize_parser.add_argument('--hierarchy', default=DEFAULT_HIERARCHY)
+    organize_parser.add_argument('--dry-run', action='store_true')    
+    organize_parser.set_defaults(cls=organize.OrganizeCommand)
+    
     return parser
 
 
