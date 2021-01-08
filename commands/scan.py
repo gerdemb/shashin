@@ -1,4 +1,5 @@
 import hashlib
+import os
 import sqlite3
 from pathlib import Path
 from tempfile import NamedTemporaryFile
@@ -68,9 +69,13 @@ class ScanCommand(object):
         except (MissingDelegateError, DelegateError):
             # Unable to load Image. Probably a video.
             # Strip all metadata and calculate md5 hash. This is not a perceptual dhash but will still allow us to match files with identical content, but different metadata.
-            with NamedTemporaryFile() as tmp:
-                et.execute_raw(str(file), "-all=", "-o", tmp.name)
-                return ScanCommand.calculate_md5(Path(tmp.name))
+            tmp = NamedTemporaryFile(delete=False)
+            tmp.close()
+            et.execute_raw(str(file), "-all=", "-o", tmp.name)
+            md5 = ScanCommand.calculate_md5(Path(tmp.name))
+            os.unlink(tmp.name)
+            return md5
+
 
     @staticmethod
     def calculate_md5(file):
