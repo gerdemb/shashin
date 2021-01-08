@@ -2,10 +2,12 @@
 
 import argparse
 from pathlib import Path
+from plugins import export_random_snapshots
 import sys
 
 from exceptions import UserError
 from commands import browse, organize, scan, cp, mv
+import plugins
 
 CACHE_DIR = '~/.cache/shashin/'
 
@@ -54,7 +56,11 @@ def get_parser():
     organize_parser.add_argument('--hierarchy', default=DEFAULT_HIERARCHY)
     organize_parser.add_argument('--dry-run', action='store_true')    
     organize_parser.set_defaults(cls=organize.OrganizeCommand)
-    
+
+    export_random_snapshots_parser = subparsers.add_parser("export-random-snapshots")
+    export_random_snapshots_parser.add_argument("export_dir")
+    export_random_snapshots_parser.add_argument("--number", default=10)
+    export_random_snapshots_parser.set_defaults(cls=export_random_snapshots.RandomSnapshotsCommand)
     return parser
 
 
