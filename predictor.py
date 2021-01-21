@@ -1,6 +1,7 @@
 import json
 from collections import defaultdict
 
+import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.compose import ColumnTransformer
@@ -14,11 +15,13 @@ from sklearn.preprocessing import FunctionTransformer
 def build_predictor(db, cache_dir):
     print("Loading json features")
     deleted = load_json(cache_dir)
+    print(f"...{len(deleted)} features")
 
     saved = None
     if deleted is not None:
         print("Loading from database")
         saved = load_db(db, deleted.index.unique())
+        print(f"...{len(saved)} features")
 
     if deleted is None or saved is None:
         return lambda a, b: 0
@@ -27,10 +30,11 @@ def build_predictor(db, cache_dir):
     pipeline = get_pipeline(*analyze_columns(deleted, saved))
     X, y = join(deleted, saved)
     pipeline.fit(X, y)
+    print("...done")
 
     def predict(a, b):
-        a_df = pd.DataFrame.from_records(a, index=[0])
-        b_df = pd.DataFrame.from_records(b, index=[0])
+        a_df = data_frame_from_records({0:[a]})
+        b_df = data_frame_from_records({0:[b]})
         X, _ = join(a_df, b_df)
         prediction = pipeline.predict(X.iloc[:1])
         print(a['SourceFile'], b['SourceFile'], prediction)
@@ -39,8 +43,16 @@ def build_predictor(db, cache_dir):
 
 
 def data_frame_from_records(records):
+    def flatten_lists(d):
+        def f(x):
+            if isinstance(x, list):
+                return ' '.join(x)
+            else:
+                return x
+        return {k:f(v) for k, v in d.items()}
+
     return pd.DataFrame.from_records(
-        [metadata for dhash in records for metadata in records[dhash]],
+        [flatten_lists(metadata) for dhash in records for metadata in records[dhash]],
         index=[dhash for dhash in records for _ in records[dhash]],
     )
 
@@ -106,12 +118,12 @@ def get_pipeline(numerical_cols, string_cols, date_cols):
             ).apply(lambda d: d.value)
         )
 
-    def to_numeric(df):
-        return df.apply(pd.to_numeric)
+    # def to_numeric(df):
+    #     return df.apply(pd.to_numeric, errors='coerce')
 
     numerical_col_transformer = ColumnTransformer([
         ('date', FunctionTransformer(to_datetime_value), date_cols),
-        ('numerical', FunctionTransformer(to_numeric), numerical_cols),
+        ('numerical', 'passthrough', numerical_cols),
     ])
 
     def subtractor(a):
@@ -120,11 +132,13 @@ def get_pipeline(numerical_cols, string_cols, date_cols):
         r = a[:, ::2]
         return l - r
 
+    def nan_to_num(x):
+        return np.nan_to_num(x)
+
     numerical_pipeline = Pipeline([
         ('reindexer', ReindexTransformer(numerical_cols + date_cols)),
         ('numerical_col_transformer', numerical_col_transformer),
-        # TODO is there a better imputer?
-        ('imputer', SimpleImputer(strategy='constant')),
+        ('nan_to_num', FunctionTransformer(nan_to_num)),
         ('subtractor', FunctionTransformer(subtractor)),
     ])
 
