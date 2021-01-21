@@ -80,17 +80,19 @@ class BrowseCommand(object):
                         metadata = [
                             get_cached_metadata(et, row)
                             for row in group
+                            if Path(row['file_name']).exists()
                         ]
-                        duplicates.append(
-                            {
-                                'images': sorted(metadata, key=cmp_to_key(predictor)),
-                                'tags': ordered_tags(metadata)
-                            }
-                        )
+                        if len(metadata) > 1:
+                            duplicates.append(
+                                {
+                                    'images': sorted(metadata, key=cmp_to_key(predictor)),
+                                    'tags': ordered_tags(metadata)
+                                }
+                            )
 
                     percentage = None
                     last_dhash = None
-                    if rows:
+                    if duplicates:
                         # Maximum hash value as a long
                         last_dhash = rows[-1]['dhash']
                         percentage = (100 * int.from_bytes(last_dhash, "big")) / 340282366920938463463374607431768211455

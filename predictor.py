@@ -15,8 +15,13 @@ def build_predictor(db, cache_dir):
     print("Loading json features")
     deleted = load_json(cache_dir)
 
-    print("Loading from database")
-    saved = load_db(db, deleted.index.unique())
+    saved = None
+    if deleted is not None:
+        print("Loading from database")
+        saved = load_db(db, deleted.index.unique())
+
+    if deleted is None or saved is None:
+        return lambda a, b: 0
 
     print("Fitting data")
     pipeline = get_pipeline(*analyze_columns(deleted, saved))
@@ -46,8 +51,8 @@ def load_json(cache_dir):
         with file.open() as f:
             dhash, metadata = json.load(f)
             features[dhash].append(metadata)
-    df = data_frame_from_records(features)
-    return df
+    if features:
+        return data_frame_from_records(features)
 
 
 def load_db(db, hashes):
@@ -56,8 +61,8 @@ def load_db(db, hashes):
         for row in db.image_select_by_dhash(bytes.fromhex(dhash)):
             metadata = json.loads(row['metadata'])
             features[dhash].append(metadata)
-    df = data_frame_from_records(features)
-    return df
+    if features:
+        return data_frame_from_records(features)
 
 
 def join(deleted, saved):
@@ -94,20 +99,19 @@ def get_pipeline(numerical_cols, string_cols, date_cols):
     def to_datetime_value(df):
         """Convert Datetime objects to seconds for numerical/quantitative parsing"""
         return df.astype(str).apply(
-            lambda x: pd.to_datetime(x.str.slice(
-                0, 19), format='%Y:%m:%d %H:%M:%S').apply(lambda d: d.value)
+            lambda x: pd.to_datetime(
+                x.str.slice(0, 19), 
+                format='%Y:%m:%d %H:%M:%S',
+                errors='coerce'
+            ).apply(lambda d: d.value)
         )
 
-    def tokenize(df):
-        tokenizer = CountVectorizer().build_tokenizer()
-
-        def f(x):
-            return set(tokenizer(x))
-        return df.fillna('').applymap(f)
+    def to_numeric(df):
+        return df.apply(pd.to_numeric)
 
     numerical_col_transformer = ColumnTransformer([
         ('date', FunctionTransformer(to_datetime_value), date_cols),
-        ('numerical', 'passthrough', numerical_cols),
+        ('numerical', FunctionTransformer(to_numeric), numerical_cols),
     ])
 
     def subtractor(a):
@@ -119,10 +123,17 @@ def get_pipeline(numerical_cols, string_cols, date_cols):
     numerical_pipeline = Pipeline([
         ('reindexer', ReindexTransformer(numerical_cols + date_cols)),
         ('numerical_col_transformer', numerical_col_transformer),
-        # TODO can we do better here?
+        # TODO is there a better imputer?
         ('imputer', SimpleImputer(strategy='constant')),
         ('subtractor', FunctionTransformer(subtractor)),
     ])
+
+    def tokenize(df):
+        tokenizer = CountVectorizer().build_tokenizer()
+
+        def f(x):
+            return set(tokenizer(x))
+        return df.astype(str).fillna('').applymap(f)
 
     string_col_transformer = ColumnTransformer([
         ('string', FunctionTransformer(tokenize), string_cols),
