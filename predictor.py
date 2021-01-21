@@ -118,12 +118,16 @@ def get_pipeline(numerical_cols, string_cols, date_cols):
             ).apply(lambda d: d.value)
         )
 
-    # def to_numeric(df):
-    #     return df.apply(pd.to_numeric, errors='coerce')
+    def to_numeric(df):
+        return df.apply(pd.to_numeric, errors='coerce')
+        
+    def str_len(df):
+        return df.fillna('').astype(str).applymap(len)
 
     numerical_col_transformer = ColumnTransformer([
         ('date', FunctionTransformer(to_datetime_value), date_cols),
-        ('numerical', 'passthrough', numerical_cols),
+        ('numerical', FunctionTransformer(to_numeric), numerical_cols),
+        ('string', FunctionTransformer(str_len), string_cols),
     ])
 
     def subtractor(a):
@@ -136,7 +140,7 @@ def get_pipeline(numerical_cols, string_cols, date_cols):
         return np.nan_to_num(x)
 
     numerical_pipeline = Pipeline([
-        ('reindexer', ReindexTransformer(numerical_cols + date_cols)),
+        ('reindexer', ReindexTransformer(numerical_cols + date_cols + string_cols)),
         ('numerical_col_transformer', numerical_col_transformer),
         ('nan_to_num', FunctionTransformer(nan_to_num)),
         ('subtractor', FunctionTransformer(subtractor)),
