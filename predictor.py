@@ -46,6 +46,7 @@ def data_frame_from_records(records):
     def flatten_lists(d):
         def f(x):
             if isinstance(x, list):
+                print(x)
                 return ' '.join(x)
             else:
                 return x
@@ -120,7 +121,7 @@ def get_pipeline(numerical_cols, string_cols, date_cols):
 
     def to_numeric(df):
         return df.apply(pd.to_numeric, errors='coerce')
-        
+
     def str_len(df):
         return df.fillna('').astype(str).applymap(len)
 
