@@ -27,11 +27,12 @@ Open http://localhost:8000/
 
 ## Other Commands
 
-Commands for organizing images into `YYYY/MM/DD` folders. `src` directory will be scanned recursively and files organized into `dest/YYYY/MM/DD` directories based in `DateTimeOriginal` tag or `FileModifyDate` if `DateTimeOriginal` tag does not exist. Use `--dry-run` option to test file actions.
+Commands for organizing images into `YYYY/MM/DD` folders. `src` directory will be scanned recursively and files copied or moved into `dest/YYYY/MM/DD` directories based in `DateTimeOriginal` tag or `FileModifyDate` if `DateTimeOriginal` tag does not exist. The `organize` command will move the files in the destination in place. Use `--dry-run` option to test file actions.
 
 ```
 ./shashin.py cp src dest/
 ./shashin.py mv src dest/
+./shashin.py organize dest/
 ```
 
 ## Security
