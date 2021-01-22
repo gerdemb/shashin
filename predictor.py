@@ -46,8 +46,7 @@ def data_frame_from_records(records):
     def flatten_lists(d):
         def f(x):
             if isinstance(x, list):
-                print(x)
-                return ' '.join(x)
+                return ' '.join(str(x))
             else:
                 return x
         return {k:f(v) for k, v in d.items()}
