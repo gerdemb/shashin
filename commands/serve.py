@@ -56,7 +56,7 @@ def ordered_tags(metadata):
     return ordered_keys
 
 
-class BrowseCommand(object):
+class ServeCommand(object):
 
     def __init__(self, config):
         self.cache_dir = config.cache_dir

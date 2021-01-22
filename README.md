@@ -20,7 +20,7 @@
     pip -r requirements.txt
     ./shashin.py scan dir1
     ./shashin.py scan dir2
-    ./shashin.py browse
+    ./shashin.py serve
 ```
 
 Open http://localhost:8000/
