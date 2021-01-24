@@ -64,6 +64,7 @@ class ServeCommand(object):
     def execute(self):
         app = Flask(__name__, )
         app.url_map.converters['everything'] = EverythingConverter
+        app.config['TESTING'] = True
 
         with DB(self.cache_dir) as db:
             predictor = build_predictor(db, self.cache_dir)
