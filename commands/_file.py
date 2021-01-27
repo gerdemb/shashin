@@ -1,11 +1,11 @@
-import json
+from db_utils import get_cached_metadata
 from datetime import datetime
 from pathlib import Path
 
 from db import DB
 from exceptions import UserError
 from exif import Exif
-from file_utils import action_required, check_destination, path_file_walk
+from file_utils import action_required, path_file_walk
 from jinja2 import Environment
 
 
@@ -45,23 +45,16 @@ class FileCommand(object):
         with DB(self.cache_dir) as db:
             with Exif() as et:
                 for file in path_file_walk(self.src):
-                    # Get file Stats
-                    stat = file.stat()
-                    mtime = stat.st_mtime
-                    size = stat.st_size
-
                     # Check if file is already in DB
                     row = db.image_select_by_file_name(file)
-                    if row and row['mtime'] == mtime and row['size'] == size:
-                        # File in db and unchanged
-                        metadata = json.loads(row['metadata'])
-                    else:
-                        # File is missing from DB or has been modified
-                        try:
+                    try:
+                        if row:
+                            metadata = get_cached_metadata(et, row)
+                        else:
                             metadata = et.get_metadata(file)
-                        except Exception as e:
-                            print("Error {} {}".format(file, e))
-                            continue
+                    except Exception as e:
+                        print("Error {} {}".format(file, e))
+                        continue
 
                     hierarchy = self.template.render(metadata).strip()
                     dest_path = self.dest / hierarchy
