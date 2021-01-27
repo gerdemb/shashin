@@ -1,16 +1,21 @@
 import json
 from collections import defaultdict
+import cProfile
+import time
 
 import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.compose import ColumnTransformer
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.experimental import enable_hist_gradient_boosting
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, GradientBoostingClassifier, HistGradientBoostingClassifier, BaggingClassifier
+from sklearn.feature_extraction.text import CountVectorizer, HashingVectorizer
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import FeatureUnion, Pipeline
 from sklearn.preprocessing import FunctionTransformer
-
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import SGDClassifier
+from sklearn.svm import LinearSVR
 
 def build_predictor(db, cache_dir):
     print("Loading json features")
@@ -29,15 +34,20 @@ def build_predictor(db, cache_dir):
     print("Fitting data")
     pipeline = get_pipeline(*analyze_columns(deleted, saved))
     X, y = join(deleted, saved)
-    pipeline.fit(X, y)
+    X_train, X_test, y_train, y_test = train_test_split(X, y)
+    pipeline.fit(X_train, y_train)
     print("...done")
+    print('R2 score: {0:.2f}'.format(pipeline.score(X_test, y_test)))
 
     def predict(a, b):
         a_df = data_frame_from_records({0:[a]})
         b_df = data_frame_from_records({0:[b]})
         X, _ = join(a_df, b_df)
+
+        start = time.perf_counter()
         prediction = pipeline.predict(X.iloc[:1])
-        print(a['SourceFile'], b['SourceFile'], prediction)
+        end = time.perf_counter()
+        print(f"{a['SourceFile']} {b['SourceFile']} {prediction} Time: {end-start}")
         return prediction
     return predict
 
@@ -164,7 +174,7 @@ def get_pipeline(numerical_cols, string_cols, date_cols):
         ('reindexer', ReindexTransformer(string_cols)),
         ('string_col_transformer', string_col_transformer),
         ('build_corpus', FunctionTransformer(build_corpus)),
-        ('count_vectorizer', CountVectorizer())
+        ('count_vectorizer', HashingVectorizer())
     ])
 
     feature_union = FeatureUnion([
@@ -174,7 +184,7 @@ def get_pipeline(numerical_cols, string_cols, date_cols):
 
     return Pipeline([
         ('feature_union', feature_union),
-        ('model', RandomForestClassifier())
+        ('model', AdaBoostClassifier())
     ])
 
 

@@ -18,7 +18,7 @@ class RandomSnapshotsCommand(Plugin):
             r'''SELECT * FROM images ORDER BY RANDOM() LIMIT ?''',
             (config.number,)
         )
-        self.export_dir = config.export_dir
+        self.export_dir = str(config.export_dir)
 
     def process_row(self, et, row):
         file = Path(row['file_name'])
@@ -29,10 +29,13 @@ class RandomSnapshotsCommand(Plugin):
                         converted.thumbnail(
                             *self.calculate_proportional_size(original.size,
                                                                 (1024, 1024)))
-                        converted.save(filename=tempfile.mktemp(
+                        filename = tempfile.mktemp(
                             dir=str(self.export_dir),
                             prefix="thumb_",
-                            suffix=".jpg"))
+                            suffix=".jpg"
+                        )
+                        converted.save(filename=filename)
+                        print(filename)
             except DelegateError:
                 # Error reading file
                 pass
