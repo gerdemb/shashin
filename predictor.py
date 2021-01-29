@@ -1,39 +1,35 @@
 import json
-from collections import defaultdict
-import cProfile
 import time
+from collections import defaultdict
 
 import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.compose import ColumnTransformer
-from sklearn.experimental import enable_hist_gradient_boosting
-from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, GradientBoostingClassifier, HistGradientBoostingClassifier, BaggingClassifier
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_extraction.text import CountVectorizer, HashingVectorizer
-from sklearn.impute import SimpleImputer
+from sklearn.model_selection import train_test_split
 from sklearn.pipeline import FeatureUnion, Pipeline
 from sklearn.preprocessing import FunctionTransformer
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import SGDClassifier
-from sklearn.svm import LinearSVR
+
 
 def build_predictor(db, cache_dir):
     print("Loading json features")
     deleted = load_json(cache_dir)
     print(f"...{len(deleted)} features")
 
-    saved = None
-    if deleted is not None:
-        print("Loading from database")
-        saved = load_db(db, deleted.index.unique())
-        print(f"...{len(saved)} features")
+    print("Loading from database")
+    saved = load_db(db, deleted.keys())
+    print(f"...{len(saved)} features")
 
-    if deleted is None or saved is None:
+    if len(deleted) == 0 or len(saved) == 0:
         return lambda a, b: 0
 
     print("Fitting data")
-    pipeline = get_pipeline(*analyze_columns(deleted, saved))
-    X, y = join(deleted, saved)
+    deleted_df = data_frame_from_records(deleted)
+    saved_df = data_frame_from_records(saved)
+    pipeline = get_pipeline(*analyze_columns(deleted_df, saved_df))
+    X, y = join(deleted_df, saved_df)
     X_train, X_test, y_train, y_test = train_test_split(X, y)
     pipeline.fit(X_train, y_train)
     print("...done")
@@ -73,8 +69,7 @@ def load_json(cache_dir):
         with file.open() as f:
             dhash, metadata = json.load(f)
             features[dhash].append(metadata)
-    if features:
-        return data_frame_from_records(features)
+    return features
 
 
 def load_db(db, hashes):
@@ -83,8 +78,7 @@ def load_db(db, hashes):
         for row in db.image_select_by_dhash(bytes.fromhex(dhash)):
             metadata = json.loads(row['metadata'])
             features[dhash].append(metadata)
-    if features:
-        return data_frame_from_records(features)
+    return features
 
 
 def join(deleted, saved):
@@ -184,7 +178,7 @@ def get_pipeline(numerical_cols, string_cols, date_cols):
 
     return Pipeline([
         ('feature_union', feature_union),
-        ('model', AdaBoostClassifier())
+        ('model', RandomForestClassifier())
     ])
 
 
