@@ -32,8 +32,7 @@ def build_predictor(db, cache_dir):
     X, y = join(deleted_df, saved_df)
     X_train, X_test, y_train, y_test = train_test_split(X, y)
     pipeline.fit(X_train, y_train)
-    print("...done")
-    print('R2 score: {0:.2f}'.format(pipeline.score(X_test, y_test)))
+    print('...R2 score: {0:.2f}'.format(pipeline.score(X_test, y_test)))
 
     def predict(a, b):
         a_df = data_frame_from_records({0:[a]})
@@ -43,7 +42,7 @@ def build_predictor(db, cache_dir):
         start = time.perf_counter()
         prediction = pipeline.predict(X.iloc[:1])
         end = time.perf_counter()
-        print(f"{a['SourceFile']} {b['SourceFile']} {prediction} Time: {end-start}")
+        print(f"{a['SourceFile']} {b['SourceFile']} y={prediction} {end-start:.2f}s")
         return prediction
     return predict
 
