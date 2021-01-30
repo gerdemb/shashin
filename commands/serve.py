@@ -8,7 +8,7 @@ from pathlib import Path
 from db import DB
 from exif import Exif
 from flask import Flask, render_template, request, send_file
-from predictor import build_predictor
+from learn.predictor import build_predictor
 from wand.image import Image
 from werkzeug.exceptions import abort
 from werkzeug.routing import PathConverter
