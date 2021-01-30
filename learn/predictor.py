@@ -4,7 +4,7 @@ from collections import defaultdict
 
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from .numeric_pipeline import get_pipeline
+from .cmp_pipeline import get_pipeline
 
 
 def build_predictor(db, cache_dir):
