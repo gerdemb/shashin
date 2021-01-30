@@ -1,7 +1,7 @@
 import tempfile
 from pathlib import Path
 
-from wand.exceptions import DelegateError
+from wand.exceptions import DelegateError, MissingDelegateError
 from wand.image import Image
 from plugins import Plugin
 from db import DB
@@ -36,7 +36,7 @@ class RandomSnapshotsCommand(Plugin):
                         )
                         converted.save(filename=filename)
                         print(filename)
-            except DelegateError:
+            except (DelegateError, MissingDelegateError):
                 # Error reading file
                 pass
 
