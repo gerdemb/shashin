@@ -4,7 +4,7 @@ from collections import defaultdict
 
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from .default_pipeline import get_pipeline
+from .numeric_pipeline import get_pipeline
 
 
 def build_predictor(db, cache_dir):
@@ -20,18 +20,14 @@ def build_predictor(db, cache_dir):
         return lambda a, b: 0
 
     print("Fitting data")
-    deleted_df = data_frame_from_records(deleted)
-    saved_df = data_frame_from_records(saved)
-    pipeline = get_pipeline(deleted_df, saved_df)
-    X, y = join(deleted_df, saved_df)
+    X, y = join(deleted, saved)
+    pipeline = get_pipeline(X)
     X_train, X_test, y_train, y_test = train_test_split(X, y)
     pipeline.fit(X_train, y_train)
     print('...R2 score: {0:.2f}'.format(pipeline.score(X_test, y_test)))
 
     def predict(a, b):
-        a_df = data_frame_from_records({0:[a]})
-        b_df = data_frame_from_records({0:[b]})
-        X, _ = join(a_df, b_df)
+        X, _ = join({0: a}, {0: b})
 
         start = time.perf_counter()
         prediction = pipeline.predict(X.iloc[:1])
@@ -39,21 +35,6 @@ def build_predictor(db, cache_dir):
         print(f"{a['SourceFile']} {b['SourceFile']} y={prediction} {end-start:.2f}s")
         return prediction
     return predict
-
-
-def data_frame_from_records(records):
-    def flatten_lists(d):
-        def f(x):
-            if isinstance(x, list):
-                return ' '.join(str(x))
-            else:
-                return x
-        return {k:f(v) for k, v in d.items()}
-
-    return pd.DataFrame.from_records(
-        [flatten_lists(metadata) for dhash in records for metadata in records[dhash]],
-        index=[dhash for dhash in records for _ in records[dhash]],
-    )
 
 
 def load_json(cache_dir):
@@ -75,11 +56,29 @@ def load_db(db, hashes):
 
 
 def join(deleted, saved):
-    left_to_right = deleted.join(saved, lsuffix='_l', rsuffix='_r')
-    left_to_right['Keep'] = 1
-    right_to_left = saved.join(deleted, lsuffix='_l', rsuffix='_r')
-    right_to_left['Keep'] = -1
-    joined = left_to_right.append(right_to_left)
+    def _from_records(records):
+        data = [metadata for dhash in records for metadata in records[dhash]]
+        index = [dhash for dhash in records for _ in records[dhash]]
+        return pd.DataFrame.from_records(data, index=index,)
+    deleted_df = _from_records(deleted)
+    deleted_df['Deleted'] = True
+    saved_df = _from_records(saved)
+    saved_df['Saved'] = True
+
+    merged = deleted_df.append(saved_df)
+
+    deleted_saved = merged[merged['Deleted'] == True].join(
+        merged[merged['Saved'] == True], 
+        lsuffix='_l', 
+        rsuffix='_r'
+    )
+    deleted_saved['Keep'] = 1
+    saved_deleted = merged[merged['Saved'] == True].join(
+        merged[merged['Deleted'] == True], 
+        lsuffix='_l', 
+        rsuffix='_r'
+    )
+    saved_deleted['Keep'] = -1
+
+    joined = deleted_saved.append(saved_deleted)
     return joined.drop(['Keep'], axis=1), joined['Keep']
-
-

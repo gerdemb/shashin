@@ -8,29 +8,26 @@ from sklearn.pipeline import FeatureUnion, Pipeline
 from sklearn.preprocessing import FunctionTransformer
 
 
-def analyze_columns(deleted, saved):
+def analyze_columns(df):
     numerical_cols = []
     string_cols = []
     date_cols = []
 
-    df = deleted.append(saved)
-
     for cname in df.columns:
         dtype = df[cname].dtype
-        pair = (cname + '_l', cname+'_r')
         if 'Date' in cname:
-            date_cols.extend(pair)
+            date_cols.append(cname)
         elif dtype in ['int64', 'float64']:
-            numerical_cols.extend(pair)
+            numerical_cols.append(cname)
         elif dtype == "object":
-            string_cols.extend(pair)
+            string_cols.append(cname)
         else:
             assert False
     return numerical_cols, string_cols, date_cols
 
 
-def get_pipeline(deleted, saved):
-    numerical_cols, string_cols, date_cols = analyze_columns(deleted, saved)
+def get_pipeline(X):
+    numerical_cols, string_cols, date_cols = analyze_columns(X)
     def to_datetime_value(df):
         """Convert Datetime objects to seconds for numerical/quantitative parsing"""
         return df.astype(str).apply(
