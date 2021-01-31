@@ -91,19 +91,18 @@ class ServeCommand(object):
                                 }
                             )
 
-                    percentage = None
-                    last_dhash = None
                     if duplicates:
                         # Maximum hash value as a long
-                        last_dhash = rows[-1]['dhash'].hex()
+                        last_dhash = rows[-1]['dhash']
                         percentage = (100 * int.from_bytes(last_dhash, "big")) / 340282366920938463463374607431768211455
-
-                    return render_template(
-                        'index.html',
-                        duplicates=duplicates,
-                        percentage=percentage,
-                        last_dhash = last_dhash
-                    )
+                        return render_template(
+                            'index.html',
+                            duplicates=duplicates,
+                            percentage=percentage,
+                            last_dhash = last_dhash.hex()
+                        )
+                    else:
+                        return render_template('empty.html')
 
         @app.route('/image/<everything:file_name>', methods=['GET', 'DELETE', 'POST'])
         def serve_pictures(file_name):

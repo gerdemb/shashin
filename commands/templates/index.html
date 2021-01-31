@@ -1,121 +1,66 @@
-<!doctype html>
-<html lang="en">
-
-<head>
-    <!-- Required meta tags -->
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
-        integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
-
-    <title>Shashin</title>
-</head>
-
-<body>
-    <div class="container">
-        {% for group in duplicates %}
-        <div class="row row-cols-2 mt-3">
-            {% for img in group['images'] %}
-            {% set img_src = img['SourceFile']|urlencode %}
-            <div class="col">
-                <div class="card h-100">
-                    <a href="/image/{{ img_src }}">
-                        <img src="/image/{{ img_src }}" class="card-img-top">
-                    </a>
-                    <div class="card-header">
-                        <a class="btn btn-danger delete-btn" role="button"
-                            data-name="{{ img_src }}">
-                            Delete</a>
-                        <a class="btn ignore-btn" role="button"
-                            data-name="{{ img_src }}">
-                            Ignore</a>
-                    </div>
-                    <div class="card-body">
-                        <!-- <h5 class="card-title">{{ img['file_name'] }}</h5> -->
-                        <dl class="row">
-                            <table class="table table-sm" style="table-layout: fixed;">
-                                <tbody>
-                                    {% for tag in group['tags'] %}
-                                    <tr>
-                                        <td class="small text-truncate">{{ tag }}</td>
-                                        <td class="small text-truncate">
-                                            {% if tag == 'FileSize' %}
-                                            {{ img[tag]|filesizeformat }}
-                                            {% else %}
-                                            {{ img[tag] }}
-                                            {% endif %}
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </dl>
-                    </div>
-                    <!-- <div class="card-footer">
+{% extends "base.html" %}
+{% block container %}
+{% for group in duplicates %}
+<div class="row row-cols-2 mt-3">
+    {% for img in group['images'] %}
+    {% set img_src = img['SourceFile']|urlencode %}
+    <div class="col">
+        <div class="card h-100">
+            <a href="/image/{{ img_src }}">
+                <img src="/image/{{ img_src }}" class="card-img-top">
+            </a>
+            <div class="card-header">
+                <a class="btn btn-danger delete-btn" role="button" data-name="{{ img_src }}">
+                    Delete</a>
+                <a class="btn ignore-btn" role="button" data-name="{{ img_src }}">
+                    Ignore</a>
+            </div>
+            <div class="card-body">
+                <!-- <h5 class="card-title">{{ img['file_name'] }}</h5> -->
+                <dl class="row">
+                    <table class="table table-sm" style="table-layout: fixed;">
+                        <tbody>
+                            {% for tag in group['tags'] %}
+                            <tr>
+                                <td class="small text-truncate">{{ tag }}</td>
+                                <td class="small text-truncate">
+                                    {% if tag == 'FileSize' %}
+                                    {{ img[tag]|filesizeformat }}
+                                    {% else %}
+                                    {{ img[tag] }}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </dl>
+            </div>
+            <!-- <div class="card-footer">
                         <a class="btn btn-danger delete-btn" role="button"
                             data-name="{{ img_src }}">
                             Delete</a>
                     </div> -->
-                </div>
-            </div>
-            {% endfor %}
         </div>
-        {% if loop.last %}
-        <div class="row mt-3">
-            <div class="col">
-                <div class="progress">
-                    <div class="progress-bar" role="progressbar" aria-valuenow="{{ percentage }}" aria-valuemin="0"
-                        aria-valuemax="100" style="width: {{ percentage }}%;">
-                    </div>
-                </div>
-                <nav class="mt-1">
-                    <ul class="pagination justify-content-center">
-                        <li class="page-item"><a class="page-link" href="/">&LeftArrowBar; Beginning</a></li>
-                        <li class="page-item"><a class="page-link" href="?start={{ last_dhash }}">Next &rarr;</a></li>
-                    </ul>
-                </nav>
-            </div>
-        </div>
-        {% endif %}
-        {% endfor %}
     </div>
-
-
-
-    <!-- Optional JavaScript -->
-    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-    <script src="https://code.jquery.com/jquery-3.4.1.min.js"
-        integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
-        integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
-        crossorigin="anonymous"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
-        integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
-        crossorigin="anonymous"></script>
-
-    <script type="text/javascript">
-        $(".delete-btn").click(function () {
-            var image = "image/" + $(this).data("name");
-            var parent = $(this).parent().parent();
-
-            $.ajax({
-                url: image,
-                type: 'DELETE'
-            }).done(function (data) { parent.addClass('fade'); });
-        });
-        $(".ignore-btn").click(function () {
-            var image = "image/" + $(this).data("name");
-            var parent = $(this).parent().parent();
-
-            $.ajax({
-                url: image,
-                type: 'POST'
-            }).done(function (data) { parent.addClass('fade'); });
-        });
-
-    </script>
-</body>
-
-</html>
+    {% endfor %}
+</div>
+{% if loop.last %}
+<div class="row mt-3">
+    <div class="col">
+        <div class="progress">
+            <div class="progress-bar" role="progressbar" aria-valuenow="{{ percentage }}" aria-valuemin="0"
+                aria-valuemax="100" style="width: {{ percentage }}%;">
+            </div>
+        </div>
+        <nav class="mt-1">
+            <ul class="pagination justify-content-center">
+                <li class="page-item"><a class="page-link" href="/">&LeftArrowBar; Beginning</a></li>
+                <li class="page-item"><a class="page-link" href="?start={{ last_dhash }}">Next &rarr;</a></li>
+            </ul>
+        </nav>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+{% endblock %}
