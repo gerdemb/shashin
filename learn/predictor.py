@@ -81,4 +81,6 @@ def join(deleted, saved):
     saved_deleted['Keep'] = -1
 
     joined = deleted_saved.append(saved_deleted)
-    return joined.drop(['Keep'], axis=1), joined['Keep']
+    X = joined.drop(['Keep', 'Saved_l', 'Saved_r', 'Deleted_l', 'Deleted_r'], axis=1)
+    y = joined['Keep']
+    return X, y
