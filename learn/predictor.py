@@ -27,7 +27,7 @@ def build_predictor(db, cache_dir):
     print('...R2 score: {0:.2f}'.format(pipeline.score(X_test, y_test)))
 
     def predict(a, b):
-        X, _ = join({0: a}, {0: b})
+        X, _ = join({0: [a]}, {0: [b]})
 
         start = time.perf_counter()
         prediction = pipeline.predict(X.iloc[:1])
