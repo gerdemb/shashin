@@ -4,7 +4,7 @@ from collections import defaultdict
 
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from .cmp_pipeline import get_pipeline
+from .cmp import pipeline
 
 
 def build_predictor(db, cache_dir):
@@ -21,7 +21,6 @@ def build_predictor(db, cache_dir):
 
     print("Fitting data")
     X, y = join(deleted, saved)
-    pipeline = get_pipeline(X)
     X_train, X_test, y_train, y_test = train_test_split(X, y)
     pipeline.fit(X_train, y_train)
     print('...R2 score: {0:.2f}'.format(pipeline.score(X_test, y_test)))
