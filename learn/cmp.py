@@ -1,8 +1,6 @@
 from learn.utils import split
 import numpy as np
 import pandas as pd
-from scipy.sparse.csr import csr_matrix
-from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.pipeline import FeatureUnion, Pipeline
@@ -23,7 +21,7 @@ def to_numeric(df):
 def split_cmp(df):
     """Split into left and right sides a calculate sign of the difference. Values need to be numeric"""
     l, r = split(df)
-    # TODO 0 - NaN should equal 1, but using fill_value=0 means it is evaluated as 0 - 0
+    # NOTE: 0-NaN should probably equal 1, but using fill_value=0 means it is evaluated as 0-0=0
     d = l.sub(r.values, fill_value=0).fillna(0)
     cmp = np.sign(d)
     return cmp
@@ -66,6 +64,9 @@ string_len_pipeline = Pipeline([
 tokenizer_pipeline = Pipeline([
     ('reindex', StringReindexTransformer()),
     ('tokenizer', TokenizerTransformer(CountVectorizer())),
+    # Put passthrough here to prevent exception in pipeline validation. TokenizerTransformer doesn't have to implement fit() as model step in parent pipeline is final
+    # step. Seems like sklearn pipeline validation is broken here.
+    ('passthrough', 'passthrough'),
 ])
 
 feature_union = FeatureUnion([
