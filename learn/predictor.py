@@ -60,26 +60,27 @@ def join(deleted, saved):
         index = [dhash for dhash in records for _ in records[dhash]]
         return pd.DataFrame.from_records(data, index=index,)
     deleted_df = _from_records(deleted)
-    deleted_df['Deleted'] = True
+    deleted_df['Keep'] = -1
     saved_df = _from_records(saved)
-    saved_df['Saved'] = True
+    saved_df['Keep'] = 1
 
     merged = deleted_df.append(saved_df)
 
-    deleted_saved = merged[merged['Deleted'] == True].join(
-        merged[merged['Saved'] == True], 
+    # Keep_l=-1, Keep_r=1
+    deleted_saved = merged[merged['Keep'] == -1].join(
+        merged[merged['Keep'] == 1], 
         lsuffix='_l', 
         rsuffix='_r'
     )
-    deleted_saved['Keep'] = 1
-    saved_deleted = merged[merged['Saved'] == True].join(
-        merged[merged['Deleted'] == True], 
+
+    # Keep_l=1, Keep_r=-1
+    saved_deleted = merged[merged['Keep'] == 1].join(
+        merged[merged['Keep'] == -1], 
         lsuffix='_l', 
         rsuffix='_r'
     )
-    saved_deleted['Keep'] = -1
 
     joined = deleted_saved.append(saved_deleted)
-    X = joined.drop(['Keep', 'Saved_l', 'Saved_r', 'Deleted_l', 'Deleted_r'], axis=1)
-    y = joined['Keep']
+    X = joined.drop(['Keep_l', 'Keep_r'], axis=1)
+    y = joined['Keep_r']
     return X, y
