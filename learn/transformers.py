@@ -49,5 +49,5 @@ class TokenizerTransformer(BaseEstimator, TransformerMixin):
         r_corpus = self.str_join_cols(r)
         l_transform = self.vectorizer.transform(l_corpus)        
         r_transform = self.vectorizer.transform(r_corpus)
-        c = l_transform - r_transform
+        c = (l_transform - r_transform).sign()
         return c
