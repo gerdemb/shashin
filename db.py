@@ -30,14 +30,8 @@ class DB(object):
             file_name TEXT PRIMARY KEY,
             mtime FLOAT NOT NULL,
             size INT NOT NULL,
-            md5 BLOB NOT NULL,
             dhash BLOB,
             metadata TEXT NOT NULL
-        );
-
-        CREATE INDEX IF NOT EXISTS idx_md5 ON images 
-        (
-            md5
         );
 
         CREATE INDEX IF NOT EXISTS idx_dhash ON images 
@@ -57,18 +51,13 @@ class DB(object):
         kwargs['metadata'] = json.dumps(kwargs['metadata'])
         kwargs['file_name'] = str(kwargs['file_name'])
         self._execute(r'''
-            INSERT OR REPLACE INTO images (file_name, mtime, size, md5, dhash, metadata) 
-            VALUES (:file_name, :mtime, :size, :md5, :dhash, :metadata)
+            INSERT OR REPLACE INTO images (file_name, mtime, size, dhash, metadata) 
+            VALUES (:file_name, :mtime, :size, :dhash, :metadata)
         ''', kwargs)
         self._execute(r'''
             DELETE FROM ignore WHERE dhash = :dhash
         ''', kwargs)
         self._commit()
-
-    def image_select_by_md5_and_size(self, md5, size):
-        return self._execute(r'''
-            SELECT * FROM images WHERE md5 = :md5 and size = :size
-        ''', (md5, size))
 
     def image_select_by_dhash(self, dhash):
         return self._execute(r'''

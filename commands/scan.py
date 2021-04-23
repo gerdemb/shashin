@@ -45,15 +45,11 @@ class ScanCommand(object):
             except Exception as e:
                 print("Error {} {}".format(file, e))
                 continue
-            md5 = self.calculate_md5(file)
             dhash = self.calculate_dhash(et, file)
-            if not dhash:
-                dhash = md5
 
             data = {
                 'mtime': mtime,
                 'size': size,
-                'md5': md5,
                 'dhash': dhash,
                 'metadata': metadata,
             }
@@ -69,24 +65,7 @@ class ScanCommand(object):
             with Image(filename=str(file)) as image:
                 return sqlite3.Binary(format_bytes(*dhash_row_col(image)))
         except (MissingDelegateError, DelegateError):
-            # Unable to load Image. Probably a video.
-            # Perceptual hashes are not supported for videos, use an md5 hash instead.
-            # First, try to strip all metadata and calculate md5 hash. 
-            # exiftool doesn't support modifying tags for most videos, so this usually (always?) fails.
-            with NamedTemporaryFile() as t:
-                tmp = Path(t.name)
-                et.execute_raw(str(file), "-all=", "-o", str(tmp))
-                if tmp.stat().st_size > 0:
-                    return ScanCommand.calculate_md5(tmp)
-
-
-    @staticmethod
-    def calculate_md5(file):
-        hash_md5 = hashlib.md5()
-        with file.open("rb") as f:
-            for chunk in iter(lambda: f.read(4096), b""):
-                hash_md5.update(chunk)
-        return sqlite3.Binary(hash_md5.digest())
+            pass
 
     @staticmethod
     def scan_db(db):
