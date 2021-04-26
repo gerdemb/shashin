@@ -101,10 +101,10 @@ class DB(object):
                 SELECT * FROM images
                 '''):
             if condition(row):
-                print("Missing {}".format(row['file_name']))
                 cursor2.execute(r'''
                     DELETE FROM images WHERE file_name = ?
                 ''', (row['file_name'],))
+                print_action("MISSING", row['file_name'])
         self._commit()
 
     def ignore_insert_dhash(self, dhash):

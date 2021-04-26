@@ -12,6 +12,13 @@
 - [ImageMagick with development libraries](http://docs.wand-py.org/en/0.5.8/guide/install.html#install-imagemagick-on-debian-ubuntu)
 - [ExifTool](https://exiftool.org)
 
+It may be necessary to set environment variables for the Wand to find the ImageMagick libraries.
+
+```
+export MAGICK_HOME=/
+export WAND_MAGICK_LIBRARY_SUFFIX="-6.Q8"
+```
+
 ## Quick Start
 
 ```
@@ -39,7 +46,7 @@ Commands for organizing images into `YYYY/MM/DD` folders. `src` directory will b
 The web interface should be served for local browsers only. There is no security and any external user could view or delete images. Additionally the complete path location of each image (ie. `/Users/admin/photos/album/img_1.jpg`) is exposed to the browser. 
 
 ## Architecture
-On an import, the dhash of each file is calculated and stored in an sqlite3 database. This database is used to detect identical files and similar images. By default, it is stored in `~/.cache/shashin/shashin.sqlite3`
+On scan, the dhash of each file is calculated and stored in an sqlite3 database. This database is used to detect identical files and similar images. By default, it is stored in `~/.cache/shashin/shashin.sqlite3`
 
 ## Machine Learning
 In the web interface, a group of duplicated images is ordered so that the FIRST image is the one predicted to be kept and the following images are to be deleted. The prediction is made by building a machine learning model comparing the metadata of images that were deleted with images that were kept. A new model is built every time the `serve` command is started.

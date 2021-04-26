@@ -2,21 +2,27 @@
 {% block container %}
 {% for group in duplicates %}
 <div class="row row-cols-2 mt-3">
-    {% for img in group['images'] %}
-    {% set img_src = img['SourceFile']|urlencode %}
+    {% for metadata in group['images'] %}
+    {% set img_src = metadata['SourceFile'] %}
     <div class="col">
         <div class="card h-100">
-            <a href="/image/{{ img_src }}">
-                <img src="/image/{{ img_src }}" class="card-img-top">
+            <a href="/image/{{ img_src|urlencode }}">
+                <img src="/image/{{ img_src|urlencode }}" class="card-img-top">
             </a>
             <div class="card-header">
-                <a class="btn btn-danger delete-btn" role="button" data-name="{{ img_src }}">
+                <a class="btn btn-danger delete-btn" role="button" data-name="{{ img_src|urlencode }}">
                     Delete</a>
-                <a class="btn ignore-btn" role="button" data-name="{{ img_src }}">
+                <a class="btn ignore-btn" role="button" data-name="{{ img_src|urlencode }}">
                     Ignore</a>
+                {% if alerts[img_src] %}
+                    {% for alert in alerts[img_src] %}
+                        <div class="alert alert-warning mt-3" role="alert">
+                            {{ alert|safe }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
             </div>
             <div class="card-body">
-                <!-- <h5 class="card-title">{{ img['file_name'] }}</h5> -->
                 <dl class="row">
                     <table class="table table-sm" style="table-layout: fixed;">
                         <tbody>
@@ -25,9 +31,9 @@
                                 <td class="small text-truncate">{{ tag }}</td>
                                 <td class="small text-truncate">
                                     {% if tag == 'FileSize' %}
-                                    {{ img[tag]|filesizeformat }}
+                                    {{ metadata[tag]|filesizeformat }}
                                     {% else %}
-                                    {{ img[tag] }}
+                                    {{ metadata[tag] }}
                                     {% endif %}
                                 </td>
                             </tr>
@@ -36,11 +42,6 @@
                     </table>
                 </dl>
             </div>
-            <!-- <div class="card-footer">
-                        <a class="btn btn-danger delete-btn" role="button"
-                            data-name="{{ img_src }}">
-                            Delete</a>
-                    </div> -->
         </div>
     </div>
     {% endfor %}

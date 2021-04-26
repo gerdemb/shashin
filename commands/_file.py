@@ -5,13 +5,15 @@ from pathlib import Path
 from db import DB
 from exceptions import UserError
 from exif import Exif
-from file_utils import action_required, path_file_walk
+from file_utils import action_required, path_file_walk, print_action
 from jinja2 import Environment
 
 
 class FileCommand(object):
 
     def __init__(self, config, action):
+        self.verbose = config.verbose
+        self.quiet = config.quiet
         self.cache_dir = config.cache_dir
         self.src = Path(config.src).expanduser()
         self.dest = Path(config.dest).expanduser()
@@ -53,7 +55,7 @@ class FileCommand(object):
                         else:
                             metadata = et.get_metadata(file)
                     except Exception as e:
-                        print("Error {} {}".format(file, e))
+                        print_action("ERROR", file, e)
                         continue
 
                     hierarchy = self.template.render(metadata).strip()
@@ -61,6 +63,8 @@ class FileCommand(object):
 
                     if action_required(file, dest_path):
                         if self.action(file, dest_path):
-                            print(f"{file} -> {dest_path}")
+                            if not self.quiet:
+                                print_action(self.action.__name__.upper(), file, dest_path)
                         else:
-                            print(f"Skipping existing file {file} -> {dest_path}")
+                            if self.verbose:
+                                print_action("SKIPPING", file, dest_path)

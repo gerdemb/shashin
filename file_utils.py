@@ -53,3 +53,8 @@ def cp(file, dest_path):
 def nop(file, dest_path):
     if check_destination(file, dest_path):
         return dest_path / file.name
+
+
+def print_action(action, *args):
+    action_ljust = action.ljust(8)
+    print(f"[{action_ljust}] " + " ".join([str(a) for a in args]))

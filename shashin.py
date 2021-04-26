@@ -25,6 +25,9 @@ def get_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--cache-dir', default=CACHE_DIR,
                         help='cache directory (default: %(default)s)')
+    verbosity = parser.add_mutually_exclusive_group()
+    verbosity.add_argument('-v', '--verbose', action='store_true')    
+    verbosity.add_argument('-q', '--quiet', action='store_true')    
 
     subparsers = parser.add_subparsers(dest='command')
     subparsers.required = True

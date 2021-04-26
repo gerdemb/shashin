@@ -8,14 +8,17 @@ from db import DB
 from dhash import dhash_row_col, format_bytes
 from exceptions import UserError
 from exif import Exif
-from file_utils import path_file_walk
-from wand.exceptions import DelegateError, MissingDelegateError
+from file_utils import path_file_walk, print_action
+from wand.exceptions import DelegateError, MissingDelegateError, WandRuntimeError
 from wand.image import Image
 
+from synology import get_thumbnail
 
 class ScanCommand(object):
 
     def __init__(self, config):
+        self.verbose = config.verbose
+        self.quiet = config.quiet
         self.cache_dir = config.cache_dir
         self.scan_dir = Path(config.scan_dir).expanduser()
         if not self.scan_dir.exists():
@@ -38,14 +41,16 @@ class ScanCommand(object):
             row = db.image_select_by_file_name(file)
             if row and row['mtime'] == mtime and row['size'] == size:
                 # File in db and unchanged
+                if self.verbose:
+                    print_action("SKIPPED", file)
                 continue
             # File is missing from DB or has been modified
             try:
                 metadata = et.get_metadata(file)
+                dhash = self.calculate_dhash(et, file)
             except Exception as e:
-                print("Error {} {}".format(file, e))
+                print_action("ERROR", file, e)
                 continue
-            dhash = self.calculate_dhash(et, file)
 
             data = {
                 'mtime': mtime,
@@ -57,15 +62,21 @@ class ScanCommand(object):
                 file_name=file,
                 **data
             )
-            print(f"Added {file}")
+            if not self.quiet:
+                if row:
+                    print_action("ADDED", file)
+                else:
+                    print_action("UPDATED", file)
 
     @staticmethod
     def calculate_dhash(et, file):
-        try:
-            with Image(filename=str(file)) as image:
-                return sqlite3.Binary(format_bytes(*dhash_row_col(image)))
-        except (MissingDelegateError, DelegateError):
-            pass
+        thumbnail = get_thumbnail(file)
+        if thumbnail.exists(): 
+            filename = str(thumbnail)
+        else:
+            filename = str(file)
+        with Image(filename=filename) as image:
+            return sqlite3.Binary(format_bytes(*dhash_row_col(image)))
 
     @staticmethod
     def scan_db(db):

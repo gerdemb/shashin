@@ -14,6 +14,11 @@ from werkzeug.exceptions import abort
 from werkzeug.routing import PathConverter
 from send2trash import send2trash
 
+from synology import get_thumbnail
+from collections import defaultdict
+from urllib.parse import quote
+import re
+
 # TODO make these configurable
 FIRST_KEYS = [
     'SourceFile',
@@ -55,6 +60,47 @@ def ordered_tags(metadata):
     ]
     return ordered_keys
 
+def get_duplicates(et, rows, predictor):
+    duplicates = []
+    for dhash, group in groupby(rows, lambda x: x['dhash']):
+        metadata = [
+            get_cached_metadata(et, row)
+            for row in group
+            if Path(row['file_name']).exists()
+        ]
+        if len(metadata) > 1:
+            duplicates.append(
+                {
+                    'images': sorted(metadata, key=cmp_to_key(predictor)),
+                    'tags': ordered_tags(metadata)
+                }
+            )
+    return duplicates
+
+
+def get_alerts(duplicates):
+    # alert[source_file] = ['<p>alert1</p>', '<p>alert2</p>']
+    alerts = defaultdict(list)
+
+    for group in duplicates:
+        source_files = [Path(image['SourceFile']) for image in group['images']]
+    
+        # Live Photos
+        for source_file in source_files:
+            # Search for files with the same stem that are not in the duplicates group
+            for live_photo in [str(f) for f in source_file.parent.glob(f'{source_file.stem}.*') if f not in source_files]:
+                live_photo_url = quote(live_photo)
+                alerts[str(source_file)].append(f'Possible live photo <a href="/image/{live_photo_url}" class="alert-link">{live_photo}</a>')
+
+        # Mismatched numbers
+        # Finds first group of numbers in the filename
+        digits = [re.findall("\d+", source_file.name)[0] for source_file in source_files]
+        if not all(d==digits[0] for d in digits):
+            for source_file in source_files: 
+                alerts[str(source_file)].append(f'Possible false duplicates')
+
+    return alerts
+
 
 class ServeCommand(object):
 
@@ -76,28 +122,18 @@ class ServeCommand(object):
                     start = bytes.fromhex(request.args.get('start', ''))
                     rows = db.image_select_duplicate_dhash(start).fetchall()
 
-                    duplicates = []
-                    for dhash, group in groupby(rows, lambda x: x['dhash']):
-                        metadata = [
-                            get_cached_metadata(et, row)
-                            for row in group
-                            if Path(row['file_name']).exists()
-                        ]
-                        if len(metadata) > 1:
-                            duplicates.append(
-                                {
-                                    'images': sorted(metadata, key=cmp_to_key(predictor)),
-                                    'tags': ordered_tags(metadata)
-                                }
-                            )
+                    duplicates = get_duplicates(et, rows, predictor)
 
                     if duplicates:
-                        # Maximum hash value as a long
+                        alerts = get_alerts(duplicates)
+
                         last_dhash = rows[-1]['dhash']
+                        # Maximum hash value as a long
                         percentage = (100 * int.from_bytes(last_dhash, "big")) / 340282366920938463463374607431768211455
                         return render_template(
                             'index.html',
                             duplicates=duplicates,
+                            alerts=alerts,
                             percentage=percentage,
                             last_dhash = last_dhash.hex()
                         )
@@ -122,7 +158,10 @@ class ServeCommand(object):
 
     @staticmethod
     def send_image(file):
-        if file.suffix == '.HEIC':
+        thumbnail = get_thumbnail(file, size="XL")
+        if thumbnail.exists():
+            return send_file(str(thumbnail))
+        elif file.suffix == '.HEIC':
             with Image(filename=str(file)) as img:
                 with tempfile.NamedTemporaryFile(prefix=file.name, suffix='.JPG', delete=True) as fp:
                     img.format = 'jpeg'
@@ -159,6 +198,7 @@ class ServeCommand(object):
         db.ignore_insert_dhash(row['dhash'])
         return 'True'
 
+    
 
 
 
