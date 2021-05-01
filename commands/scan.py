@@ -70,20 +70,18 @@ class ScanCommand(object):
                 file_name=file,
                 **data
             )
-            if not self.quiet:
+            if self.quiet:
                 if row:
-                    print_action("ADDED", file)
-                else:
                     print_action("UPDATED", file)
+                else:
+                    print_action("ADDED", file)
 
     @staticmethod
     def calculate_dhash(et, file):
         thumbnail = get_thumbnail(file)
         if thumbnail.exists(): 
-            filename = str(thumbnail)
-        else:
-            filename = str(file)
-        with Image(filename=filename) as image:
+            file = thumbnail
+        with Image(filename=str(file)) as image:
             return sqlite3.Binary(format_bytes(*dhash_row_col(image)))
 
     @staticmethod

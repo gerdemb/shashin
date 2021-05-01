@@ -1,6 +1,7 @@
 import sqlite3
 from pathlib import Path
 import json
+from file_utils import print_action
 
 class DB(object):
     def __init__(self, cache_dir):
@@ -79,7 +80,8 @@ class DB(object):
                 FROM images 
                 WHERE 
                     dhash > ? AND
-                    dhash NOT IN (SELECT dhash FROM ignore)
+                    dhash NOT IN (SELECT dhash FROM ignore) AND
+                    json_extract(metadata, '$.MIMEType') LIKE 'image/%'
                 GROUP BY dhash 
                 HAVING count(dhash) > 1
                 ORDER BY dhash
