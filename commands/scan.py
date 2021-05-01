@@ -20,18 +20,20 @@ class ScanCommand(object):
         self.verbose = config.verbose
         self.quiet = config.quiet
         self.cache_dir = config.cache_dir
-        self.scan_dir = Path(config.scan_dir).expanduser()
-        if not self.scan_dir.exists():
-            raise UserError(f"{self.scan_dir} does not exist")
+        self.scan_dirs = [Path(scan_dir).expanduser() for scan_dir in config.scan_dirs]
+        for scan_dir in self.scan_dirs: 
+            if not scan_dir.exists():
+                raise UserError(f"{scan_dir} does not exist")
 
     def execute(self):
         with DB(self.cache_dir) as db:
             with Exif() as et:
-                self.scan_files(db, et)
+                for scan_dir in self.scan_dirs:
+                    self.scan_files(db, et, scan_dir)
             self.scan_db(db)
 
-    def scan_files(self, db, et):
-        for file in path_file_walk(self.scan_dir):
+    def scan_files(self, db, et, scan_dir):
+        for file in path_file_walk(Path(scan_dir).expanduser()):
             # Get file Stats
             stat = file.stat()
             mtime = stat.st_mtime
@@ -45,12 +47,18 @@ class ScanCommand(object):
                     print_action("SKIPPED", file)
                 continue
             # File is missing from DB or has been modified
+
             try:
                 metadata = et.get_metadata(file)
-                dhash = self.calculate_dhash(et, file)
             except Exception as e:
                 print_action("ERROR", file, e)
                 continue
+
+            try:
+                dhash = self.calculate_dhash(et, file)
+            except Exception as e:
+                dhash = None
+                print_action("WARNING", file, e)
 
             data = {
                 'mtime': mtime,

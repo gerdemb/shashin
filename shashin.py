@@ -33,7 +33,7 @@ def get_parser():
     subparsers.required = True
 
     scan_parser = subparsers.add_parser("scan")
-    scan_parser.add_argument("scan_dir", help="dir of images to scan")
+    scan_parser.add_argument("scan_dirs", nargs='+', help="directories of images to scan")
     scan_parser.set_defaults(cls=scan.ScanCommand)
 
     serve_parser = subparsers.add_parser("serve")
