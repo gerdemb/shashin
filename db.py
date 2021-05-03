@@ -1,7 +1,6 @@
 import sqlite3
 from pathlib import Path
 import json
-from file_utils import print_action
 
 class DB(object):
     def __init__(self, cache_dir):
@@ -80,8 +79,7 @@ class DB(object):
                 FROM images 
                 WHERE 
                     dhash > ? AND
-                    dhash NOT IN (SELECT dhash FROM ignore) AND
-                    json_extract(metadata, '$.MIMEType') LIKE 'image/%'
+                    dhash NOT IN (SELECT dhash FROM ignore)
                 GROUP BY dhash 
                 HAVING count(dhash) > 1
                 ORDER BY dhash
@@ -106,7 +104,6 @@ class DB(object):
                 cursor2.execute(r'''
                     DELETE FROM images WHERE file_name = ?
                 ''', (row['file_name'],))
-                print_action("MISSING", row['file_name'])
         self._commit()
 
     def ignore_insert_dhash(self, dhash):

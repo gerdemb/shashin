@@ -14,6 +14,7 @@ from wand.image import Image
 
 from synology import get_thumbnail
 
+
 class ScanCommand(object):
 
     def __init__(self, config):
@@ -46,19 +47,20 @@ class ScanCommand(object):
                 if self.verbose:
                     print_action("SKIPPED", file)
                 continue
+            
             # File is missing from DB or has been modified
-
             try:
                 metadata = et.get_metadata(file)
             except Exception as e:
                 print_action("ERROR", file, e)
                 continue
 
-            try:
-                dhash = self.calculate_dhash(et, file)
-            except Exception as e:
-                dhash = None
-                print_action("WARNING", file, e)
+            dhash = None
+            if metadata['MIMEType'].startswith('image/'):
+                try:
+                    dhash = self.calculate_dhash(et, file)
+                except Exception as e:
+                    print_action("WARNING", file, e)
 
             data = {
                 'mtime': mtime,
@@ -70,7 +72,7 @@ class ScanCommand(object):
                 file_name=file,
                 **data
             )
-            if self.quiet:
+            if not self.quiet:
                 if row:
                     print_action("UPDATED", file)
                 else:
@@ -86,6 +88,10 @@ class ScanCommand(object):
 
     @staticmethod
     def scan_db(db):
-        db.image_purge(
-            lambda row: not Path(row['file_name']).exists()
-        )
+        def file_missing(row):
+            is_missing = not Path(row['file_name']).exists()
+            if is_missing:
+                if not self.quiet:
+                    print_action("MISSING", row['file_name'])
+            return is_missing
+        db.image_purge(file_missing)

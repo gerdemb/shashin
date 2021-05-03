@@ -69,6 +69,7 @@ def join(deleted, saved):
     # Keep_l=-1, Keep_r=1
     deleted_saved = merged[merged['Keep'] == -1].join(
         merged[merged['Keep'] == 1], 
+        how="inner",
         lsuffix='_l', 
         rsuffix='_r'
     )
@@ -76,11 +77,13 @@ def join(deleted, saved):
     # Keep_l=1, Keep_r=-1
     saved_deleted = merged[merged['Keep'] == 1].join(
         merged[merged['Keep'] == -1], 
+        how="inner",
         lsuffix='_l', 
         rsuffix='_r'
     )
 
     joined = deleted_saved.append(saved_deleted)
+
     X = joined.drop(['Keep_l', 'Keep_r'], axis=1)
     y = joined['Keep_r']
     return X, y
