@@ -86,12 +86,10 @@ class ScanCommand(object):
         with Image(filename=str(file)) as image:
             return sqlite3.Binary(format_bytes(*dhash_row_col(image)))
 
-    @staticmethod
-    def scan_db(db):
+    def scan_db(self, db):
         def file_missing(row):
             is_missing = not Path(row['file_name']).exists()
-            if is_missing:
-                if not self.quiet:
-                    print_action("MISSING", row['file_name'])
+            if is_missing and not self.quiet:
+                print_action("MISSING", row['file_name'])
             return is_missing
         db.image_purge(file_missing)
