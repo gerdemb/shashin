@@ -23,6 +23,7 @@ class RandomSnapshotsCommand(Plugin):
             (config.number,)
         )
         self.export_dir = str(config.export_dir)
+        self.verbose = config.verbose
 
     def process_row(self, et, row):
         file_path = Path(row['file_name'])
@@ -33,5 +34,6 @@ class RandomSnapshotsCommand(Plugin):
                 prefix="thumb_",
                 suffix=".jpg"
             )
-            shutil.copy2(file_path, dest)
-            print(dest)
+            shutil.copy(file_path, dest)
+            if self.verbose:
+                print(dest)
