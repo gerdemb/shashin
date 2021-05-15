@@ -12,7 +12,6 @@ from learn.predictor import build_predictor
 from wand.image import Image
 from werkzeug.exceptions import abort
 from werkzeug.routing import PathConverter
-from send2trash import send2trash
 
 from synology import get_thumbnail
 from collections import defaultdict
@@ -190,7 +189,7 @@ class ServeCommand(object):
             log.write(data_json)
 
         db.image_delete(file_name)
-        send2trash(str(file_name))
+        Path(file_name).unlink()
         return 'True'
 
     @staticmethod
