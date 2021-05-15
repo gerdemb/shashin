@@ -55,6 +55,11 @@ class ScanCommand(object):
                 print_action("ERROR", file, e)
                 continue
 
+            mime_type = metadata['MIMEType']
+            if not (mime_type.startswith('image/') or mime_type.startswith('video/')):
+                print_action("WARNING", file, f"{mime_type} files not supported")
+                continue
+
             dhash = None
             if metadata['MIMEType'].startswith('image/'):
                 try:
