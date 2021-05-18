@@ -25,9 +25,8 @@ export WAND_MAGICK_LIBRARY_SUFFIX="-6.Q8"
     git checkout https://github.com/gerdemb/shashin.git
     cd shashin 
     pip -r requirements.txt
-    ./shashin.py scan dir1
-    ./shashin.py scan dir2
-    ./shashin.py serve
+    ./shashin.py scan dir1 dir2
+    ./shashin.py browse
 ```
 
 Open http://localhost:8000/
@@ -49,7 +48,7 @@ The web interface should be served for local browsers only. There is no security
 On scan, the dhash of each file is calculated and stored in an sqlite3 database. This database is used to detect identical files and similar images. By default, it is stored in `~/.cache/shashin/shashin.sqlite3`
 
 ## Machine Learning
-In the web interface, a group of duplicated images is ordered so that the FIRST image is the one predicted to be kept and the following images are to be deleted. The prediction is made by building a machine learning model comparing the metadata of images that were deleted with images that were kept. A new model is built every time the `serve` command is started.
+In the web interface, a group of duplicated images is ordered so that the FIRST image is the one predicted to be kept and the following images are to be deleted. The prediction is made by building a machine learning model comparing the metadata of images that were deleted with images that were kept. A new model is built every time the `browse` command is started.
 
 ## TODO
 - Handle videos

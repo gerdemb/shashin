@@ -86,7 +86,7 @@ def get_alerts(duplicates):
         # Live Photos
         for source_file in source_files:
             # Search for files with the same stem that are not in the duplicates group
-            for live_photo in [str(f) for f in source_file.parent.glob(f'{source_file.stem}.*') if f not in source_files]:
+            for live_photo in [str(f) for f in source_file.parent.glob(f'{source_file.stem}.MOV') if f not in source_files]:
                 live_photo_url = quote(live_photo)
                 alerts[str(source_file)].append(f'Possible live photo <a href="/image/{live_photo_url}" class="alert-link">{live_photo}</a>')
 
@@ -100,7 +100,7 @@ def get_alerts(duplicates):
     return alerts
 
 
-class ServeCommand(object):
+class BrowseCommand(object):
 
     def __init__(self, config):
         self.cache_dir = config.cache_dir

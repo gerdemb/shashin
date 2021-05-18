@@ -6,7 +6,7 @@ from plugins import export_random_snapshots
 import sys
 
 from exceptions import UserError
-from commands import serve, organize, scan, cp, mv
+from commands import browse, organize, scan, cp, mv
 
 CACHE_DIR = '~/.cache/shashin/'
 
@@ -36,8 +36,8 @@ def get_parser():
     scan_parser.add_argument("scan_dirs", nargs='+', help="directories of images to scan")
     scan_parser.set_defaults(cls=scan.ScanCommand)
 
-    serve_parser = subparsers.add_parser("serve")
-    serve_parser.set_defaults(cls=serve.ServeCommand)
+    browse_parser = subparsers.add_parser("browse")
+    browse_parser.set_defaults(cls=browse.BrowseCommand)
 
     cp_parser = subparsers.add_parser("cp")
     cp_parser.add_argument("src")
