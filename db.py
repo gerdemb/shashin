@@ -70,6 +70,18 @@ class DB(object):
             SELECT * FROM images WHERE file_name = ?
         ''', (file_name,)).fetchone()
 
+    def image_select_by_file_name_stats(self, file_name, mtime, size):
+        file_name = str(file_name)
+        return self._execute(r'''
+            SELECT * 
+            FROM images 
+            WHERE file_name = :file_name AND mtime = :mtime AND size = :size
+        ''', {
+            'file_name': file_name,
+            'mtime': mtime,
+            'size': size,
+        }).fetchone()
+
     def image_select_duplicate_dhash(self, start='', limit=10):
         return self._execute(r'''
             SELECT *

@@ -4,6 +4,10 @@ from exiftool import ExifTool, fsencode
 class ExifError(Exception):
     pass
 
+class UnsupportedMIMETypeException(Exception):
+    pass
+
+
 class Exif(ExifTool):
     def execute_raw(self, *params):
         params = map(fsencode, params)
@@ -22,4 +26,12 @@ class Exif(ExifTool):
         metadata = super().get_metadata(str(filename))
         if 'Error' in metadata:
             raise ExifError(metadata['Error'])
+        return metadata
+
+    def get_image_medata(self, file):
+        metadata = self.get_metadata(file)
+
+        mime_type = metadata['MIMEType']
+        if not (mime_type.startswith('image/') or mime_type.startswith('video/')):
+            raise UnsupportedMIMETypeException(mime_type)
         return metadata

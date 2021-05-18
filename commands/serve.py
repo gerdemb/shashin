@@ -1,4 +1,3 @@
-from db_utils import get_cached_metadata
 import json
 import tempfile
 from functools import cmp_to_key
@@ -63,7 +62,7 @@ def get_duplicates(et, rows, predictor):
     duplicates = []
     for dhash, group in groupby(rows, lambda x: x['dhash']):
         metadata = [
-            get_cached_metadata(et, row)
+            et.get_metadata(row['file_name'])
             for row in group
             if Path(row['file_name']).exists()
         ]

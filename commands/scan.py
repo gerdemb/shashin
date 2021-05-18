@@ -1,5 +1,3 @@
-import hashlib
-import os
 import sqlite3
 from pathlib import Path
 from tempfile import NamedTemporaryFile
@@ -9,7 +7,6 @@ from dhash import dhash_row_col, format_bytes
 from exceptions import UserError
 from exif import Exif
 from file_utils import path_file_walk, print_action
-from wand.exceptions import DelegateError, MissingDelegateError, WandRuntimeError
 from wand.image import Image
 
 from synology import get_thumbnail
@@ -35,14 +32,11 @@ class ScanCommand(object):
 
     def scan_files(self, db, et, scan_dir):
         for file in path_file_walk(Path(scan_dir).expanduser()):
-            # Get file Stats
-            stat = file.stat()
-            mtime = stat.st_mtime
-            size = stat.st_size
-
             # Check if file is already in DB
-            row = db.image_select_by_file_name(file)
-            if row and row['mtime'] == mtime and row['size'] == size:
+            stat = file.stat()
+            row = db.image_select_by_file_name_stats(
+                str(file), stat.st_mtime, stat.st_size)
+            if row:
                 # File in db and unchanged
                 if self.verbose:
                     print_action("SKIPPED", file)
@@ -50,16 +44,11 @@ class ScanCommand(object):
             
             # File is missing from DB or has been modified
             try:
-                metadata = et.get_metadata(file)
+                metadata = et.get_image_metadata(file)
             except Exception as e:
                 print_action("ERROR", file, e)
                 continue
-
-            mime_type = metadata['MIMEType']
-            if not (mime_type.startswith('image/') or mime_type.startswith('video/')):
-                print_action("WARNING", file, f"{mime_type} files not supported")
-                continue
-
+            
             dhash = None
             if metadata['MIMEType'].startswith('image/'):
                 try:
@@ -68,8 +57,8 @@ class ScanCommand(object):
                     print_action("WARNING", file, e)
 
             data = {
-                'mtime': mtime,
-                'size': size,
+                'mtime': stat.st_mtime,
+                'size': stat.st_size,
                 'dhash': dhash,
                 'metadata': metadata,
             }

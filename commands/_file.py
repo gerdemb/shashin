@@ -1,4 +1,4 @@
-from db_utils import get_cached_metadata
+import json
 from datetime import datetime
 from pathlib import Path
 
@@ -48,15 +48,17 @@ class FileCommand(object):
             with Exif() as et:
                 for file in path_file_walk(self.src):
                     # Check if file is already in DB
-                    row = db.image_select_by_file_name(file)
-                    try:
-                        if row:
-                            metadata = get_cached_metadata(et, row)
-                        else:
-                            metadata = et.get_metadata(file)
-                    except Exception as e:
-                        print_action("ERROR", file, e)
-                        continue
+                    stat = file.stat()
+                    row = db.image_select_by_file_name_stats(
+                        str(file), stat.st_mtime, stat.st_size)
+                    if row:
+                        metadata = json.loads(row['metadata'])
+                    else:
+                        try:
+                            metadata = et.get_image_metadata(file)
+                        except Exception as e:
+                            print_action("ERROR", file, e)
+                            continue
 
                     hierarchy = self.template.render(metadata).strip()
                     dest_path = self.dest / hierarchy
