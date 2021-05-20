@@ -28,7 +28,7 @@ class Exif(ExifTool):
             raise ExifError(metadata['Error'])
         return metadata
 
-    def get_image_medata(self, file):
+    def get_image_metadata(self, file):
         metadata = self.get_metadata(file)
 
         mime_type = metadata['MIMEType']

@@ -5,20 +5,21 @@ from pathlib import Path
 from db import DB
 from exceptions import UserError
 from exif import Exif
-from file_utils import action_required, path_file_walk, print_action
+from file_utils import path_file_walk, quote_path as qp
 from jinja2 import Environment
 
 
 class FileCommand(object):
+    action_name = None
 
-    def __init__(self, config, action):
+    def __init__(self, config):
         self.verbose = config.verbose
         self.quiet = config.quiet
         self.cache_dir = config.cache_dir
         self.src = Path(config.src).expanduser()
         self.dest = Path(config.dest).expanduser()
         self.hierarchy = config.hierarchy
-        self.action = action
+        self.dry_run = config.dry_run
 
         if not self.src.exists():
             raise UserError(f"{self.src} does not exist")
@@ -57,16 +58,24 @@ class FileCommand(object):
                         try:
                             metadata = et.get_image_metadata(file)
                         except Exception as e:
-                            print_action("ERROR", file, e)
+                            print(f"# ERROR {e}")
+                            print(f"# rm {qp(file)}")
                             continue
 
                     hierarchy = self.template.render(metadata).strip()
-                    dest_path = self.dest / hierarchy
+                    dest_path = self.dest / hierarchy / file.name
 
-                    if action_required(file, dest_path):
-                        if self.action(file, dest_path):
-                            if not self.quiet:
-                                print_action(self.action.__name__.upper(), file, dest_path)
-                        else:
+                    # Is the file already in the right place?
+                    if dest_path != file:
+                        if dest_path.exists():
                             if self.verbose:
-                                print_action("SKIPPING", file, dest_path)
+                                print(f"# WARNING Destination file already exists")
+                                print(f"# {self.action_name} {qp(file)} {qp(dest_path)}")
+                        else:
+                            if not dest_path.parent.exists():
+                                print(f"mkdir -p {qp(dest_path.parent)}")
+                                dest_path.parent.mkdir(parents=True, exist_ok=True)
+                            if not self.quiet:
+                                print(f"{self.action_name} {qp(file)} {qp(dest_path)}")
+                            if not self.dry_run:
+                                self.action(file, dest_path)
