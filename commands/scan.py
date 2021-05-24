@@ -44,7 +44,7 @@ class ScanCommand(object):
             
             # File is missing from DB or has been modified
             try:
-                metadata = et.get_image_metadata(file)
+                metadata = et.get_metadata(file)
             except Exception as e:
                 print_action("ERROR", file, e)
                 continue

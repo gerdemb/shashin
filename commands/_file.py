@@ -47,7 +47,7 @@ class FileCommand(object):
         with Exif() as et:
             for file in path_file_walk(self.src):
                 try:
-                    metadata = et.get_image_metadata(file)
+                    metadata = et.get_metadata(file)
                 except Exception as e:
                     print(f"# ERROR {e}")
                     print(f"# rm {qp(file)}")

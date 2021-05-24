@@ -26,10 +26,6 @@ class Exif(ExifTool):
         metadata = super().get_metadata(str(filename))
         if 'Error' in metadata:
             raise ExifError(metadata['Error'])
-        return metadata
-
-    def get_image_metadata(self, file):
-        metadata = self.get_metadata(file)
 
         mime_type = metadata['MIMEType']
         if not (mime_type.startswith('image/') or mime_type.startswith('video/')):
