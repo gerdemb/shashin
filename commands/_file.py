@@ -15,7 +15,6 @@ class FileCommand(object):
     def __init__(self, config):
         self.verbose = config.verbose
         self.quiet = config.quiet
-        self.cache_dir = config.cache_dir
         self.src = Path(config.src).expanduser()
         self.dest = Path(config.dest).expanduser()
         self.hierarchy = config.hierarchy
@@ -45,37 +44,29 @@ class FileCommand(object):
         return environment.from_string(self.hierarchy)
 
     def execute(self):
-        with DB(self.cache_dir) as db:
-            with Exif() as et:
-                for file in path_file_walk(self.src):
-                    # Check if file is already in DB
-                    stat = file.stat()
-                    row = db.image_select_by_file_name_stats(
-                        str(file), stat.st_mtime, stat.st_size)
-                    if row:
-                        metadata = json.loads(row['metadata'])
+        with Exif() as et:
+            for file in path_file_walk(self.src):
+                try:
+                    metadata = et.get_image_metadata(file)
+                except Exception as e:
+                    print(f"# ERROR {e}")
+                    print(f"# rm {qp(file)}")
+                    continue
+
+                hierarchy = self.template.render(metadata).strip()
+                dest_path = self.dest / hierarchy / file.name
+
+                # Is the file already in the right place?
+                if dest_path != file:
+                    if dest_path.exists():
+                        if self.verbose:
+                            print(f"# WARNING Destination file already exists")
+                            print(f"# {self.action_name} {qp(file)} {qp(dest_path)}")
                     else:
-                        try:
-                            metadata = et.get_image_metadata(file)
-                        except Exception as e:
-                            print(f"# ERROR {e}")
-                            print(f"# rm {qp(file)}")
-                            continue
-
-                    hierarchy = self.template.render(metadata).strip()
-                    dest_path = self.dest / hierarchy / file.name
-
-                    # Is the file already in the right place?
-                    if dest_path != file:
-                        if dest_path.exists():
-                            if self.verbose:
-                                print(f"# WARNING Destination file already exists")
-                                print(f"# {self.action_name} {qp(file)} {qp(dest_path)}")
-                        else:
-                            if not dest_path.parent.exists():
-                                print(f"mkdir -p {qp(dest_path.parent)}")
-                                dest_path.parent.mkdir(parents=True, exist_ok=True)
-                            if not self.quiet:
-                                print(f"{self.action_name} {qp(file)} {qp(dest_path)}")
-                            if not self.dry_run:
-                                self.action(file, dest_path)
+                        if not dest_path.parent.exists():
+                            print(f"mkdir -p {qp(dest_path.parent)}")
+                            dest_path.parent.mkdir(parents=True, exist_ok=True)
+                        if not self.quiet:
+                            print(f"{self.action_name} {qp(file)} {qp(dest_path)}")
+                        if not self.dry_run:
+                            self.action(file, dest_path)
