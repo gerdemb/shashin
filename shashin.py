@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+from file_utils import normalized_path
 from pathlib import Path
 from plugins import export_random_snapshots
 import sys
@@ -71,7 +72,7 @@ def main(args):
     config = parser.parse_args(args)
 
     # Check that cache_dir exists or create it
-    config.cache_dir = Path(config.cache_dir).expanduser()
+    config.cache_dir = normalized_path(config.cache_dir)
     if not config.cache_dir.exists():
         config.cache_dir.mkdir(parents=True)
     elif not config.cache_dir.is_dir():

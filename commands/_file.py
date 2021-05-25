@@ -1,11 +1,9 @@
-import json
 from datetime import datetime
 from pathlib import Path
 
-from db import DB
 from exceptions import UserError
 from exif import Exif
-from file_utils import path_file_walk, quote_path as qp
+from file_utils import path_file_walk, quote_path as qp, normalized_path
 from jinja2 import Environment
 
 
@@ -15,8 +13,8 @@ class FileCommand(object):
     def __init__(self, config):
         self.verbose = config.verbose
         self.quiet = config.quiet
-        self.src = Path(config.src).expanduser()
-        self.dest = Path(config.dest).expanduser()
+        self.src = normalized_path(config.src)
+        self.dest = normalized_path(config.dest)
         self.hierarchy = config.hierarchy
         self.dry_run = config.dry_run
 
@@ -49,8 +47,7 @@ class FileCommand(object):
                 try:
                     metadata = et.get_metadata(file)
                 except Exception as e:
-                    print(f"# ERROR {e}")
-                    print(f"# rm {qp(file)}")
+                    print(f"# ERROR rm {qp(file)} # {e}")
                     continue
 
                 hierarchy = self.template.render(metadata).strip()
@@ -60,8 +57,7 @@ class FileCommand(object):
                 if dest_path != file:
                     if dest_path.exists():
                         if self.verbose:
-                            print(f"# WARNING Destination file already exists")
-                            print(f"# {self.action_name} {qp(file)} {qp(dest_path)}")
+                            print(f"# WARNING {self.action_name} {qp(file)} {qp(dest_path)} # Destination file already exists")
                     else:
                         if not dest_path.parent.exists():
                             print(f"mkdir -p {qp(dest_path.parent)}")

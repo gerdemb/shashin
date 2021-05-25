@@ -22,10 +22,9 @@ def is_child(parent, child):
         return False
 
 
-def print_action(action, *args):
-    action_ljust = action.ljust(8)
-    print(f"[{action_ljust}] " + " ".join([str(a) for a in args]))
-
-
 def quote_path(path: Path) -> str:
     return shlex.quote(str(path))
+
+
+def normalized_path(path: str) -> Path:
+    return Path(path).expanduser().resolve()
