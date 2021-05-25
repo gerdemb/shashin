@@ -10,10 +10,6 @@ from db import DB
 from synology import get_thumbnail
 
 
-SQL_SELECT = r'''
-            SELECT * FROM images ORDER BY RANDOM() LIMIT ?
-'''
-
 class RandomSnapshotsCommand(Plugin):
 
     def __init__(self, config):
