@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 
 import argparse
-from file_utils import normalized_path
-from pathlib import Path
-from plugins import export_random_snapshots
 import sys
 
+from commands import browse, cp, mv, organize, scan
 from exceptions import UserError
-from commands import browse, organize, scan, cp, mv
+from file_utils import normalized_path
+from plugins import export_random_snapshots, google_tag_images
 
 CACHE_DIR = '~/.cache/shashin/'
 
@@ -64,6 +63,11 @@ def get_parser():
     export_random_snapshots_parser.add_argument("export_dir")
     export_random_snapshots_parser.add_argument("--number", default=10)
     export_random_snapshots_parser.set_defaults(cls=export_random_snapshots.RandomSnapshotsCommand)
+
+    google_tag_images_parser = subparsers.add_parser("google-tag-images")
+    google_tag_images_parser.add_argument("--number", default=1)
+    google_tag_images_parser.set_defaults(cls=google_tag_images.GoogleTagImages)
+
     return parser
 
 

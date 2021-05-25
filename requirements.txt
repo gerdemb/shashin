@@ -5,3 +5,4 @@ Wand==0.5.9
 pandas==1.2.0
 scikit-learn==0.24.0
 Jinja2==2.11.2
+google-cloud-vision==2.3.1
