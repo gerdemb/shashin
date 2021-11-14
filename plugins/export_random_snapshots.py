@@ -30,6 +30,6 @@ class RandomSnapshotsCommand(Plugin):
                 prefix="thumb_",
                 suffix=".jpg"
             )
-            shutil.copy(file_path, dest)
+            shutil.copy(thumbnail, dest)
             if self.verbose:
                 print(dest)
