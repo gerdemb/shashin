@@ -2,6 +2,7 @@ import shlex
 from pathlib import Path
 
 def path_file_walk(path):
+    from shashin import SKIP_DIRS
     if path.is_file():
         yield path
     else:
@@ -9,8 +10,7 @@ def path_file_walk(path):
             if child.is_file():
                 yield child
             elif child.is_dir():
-                # TODO make configurable
-                if child.name != '@eaDir':
+                if child.name not in SKIP_DIRS:
                     yield from path_file_walk(child)
 
 

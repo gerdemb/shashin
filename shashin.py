@@ -11,6 +11,7 @@ from plugins import export_random_snapshots, google_tag_images
 CACHE_DIR = '~/.cache/shashin/'
 
 # TODO make configurable
+SKIP_DIRS = ['@eaDir', "#snapshot"]
 DEFAULT_HIERARCHY = r'''
 {% if DateTimeOriginal and DateTimeOriginal|datetime %}
     {{ DateTimeOriginal|datetime('%Y/%m/%d') }}
